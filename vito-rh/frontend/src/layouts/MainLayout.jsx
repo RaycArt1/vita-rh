@@ -1,19 +1,18 @@
+
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
 export default function MainLayout({ children }) {
   return (
-    <div className="d-flex vh-100">
+    <div className="app-shell">
       <Sidebar />
 
-      <div className="flex-grow-1 d-flex flex-column">
-
+      <div className="app-main">
         <Navbar />
 
-        <main className="flex-grow-1 bg-light p-4">
+        <main className="app-content">
           {children}
         </main>
-
       </div>
     </div>
   );
