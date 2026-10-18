@@ -1,3 +1,5 @@
+import "./Sidebar.css";
+
 import { NavLink } from "react-router-dom";
 import {
   FaHome,
@@ -5,70 +7,89 @@ import {
   FaCalendarAlt,
   FaUmbrellaBeach,
   FaFolderOpen,
+  FaUserShield,
+  FaHistory,
+  FaFileAlt,
+  FaUserTie,
+  FaMoneyBillWave,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
+const menu = [
+  { nombre: "Dashboard", ruta: "/dashboard", icono: <FaHome />, detalle: "" },
+  { nombre: "Empleados", ruta: "/empleados", icono: <FaUsers />, detalle: "Gestión de personal" },
+  { nombre: "Usuarios y Roles", ruta: "/usuarios", icono: <FaUserShield />, detalle: "Accesos y permisos" },
+  { nombre: "Calendarios", ruta: "/horarios", icono: <FaCalendarAlt />, detalle: "Turnos y periodos" },
+  { nombre: "Reportes", ruta: "/reportes", icono: <FaFileAlt />, detalle: "Incidencias y nóminas" },
+  { nombre: "Vacaciones", ruta: "/vacaciones", icono: <FaUmbrellaBeach />, detalle: "Permisos y ausencias" },
+  { nombre: "Reclutamiento", ruta: "/reclutamiento", icono: <FaUserTie />, detalle: "Selección de personal" },
+  { nombre: "Planillas", ruta: "/planillas", icono: <FaMoneyBillWave />, detalle: "Pagos y deducciones" },
+  { nombre: "Historial", ruta: "/historial", icono: <FaHistory />, detalle: "Registro de actividad" },
+];
+
 export default function Sidebar() {
-  const menu = [
-    {
-      nombre: "Dashboard",
-      ruta: "/dashboard",
-      icono: <FaHome />,
-    },
-    {
-      nombre: "Empleados",
-      ruta: "/empleados",
-      icono: <FaUsers />,
-    },
-    {
-      nombre: "Horarios",
-      ruta: "/horarios",
-      icono: <FaCalendarAlt />,
-    },
-    {
-      nombre: "Vacaciones",
-      ruta: "/vacaciones",
-      icono: <FaUmbrellaBeach />,
-    },
-    {
-      nombre: "Expedientes",
-      ruta: "/expedientes",
-      icono: <FaFolderOpen />,
-    },
-  ];
+  function cerrarSesion() {
+    sessionStorage.removeItem("gestRH_token");
+    sessionStorage.removeItem("gestRH_usuario");
+    window.location.assign("/login");
+  }
 
   return (
-    <div
-      className="bg-dark text-white"
-      style={{
-        width: "250px",
-        minHeight: "100vh",
-      }}
-    >
-      <h2 className="text-center py-4 fw-bold">
-        Vita RH
-      </h2>
+    <aside className="app-sidebar">
+      <div className="sidebar-brand">
+        <div className="sidebar-logo">VH</div>
+        <div className="sidebar-brand-text">
+          <strong>GestRH</strong>
+          <span>Vito Pizzería</span>
+        </div>
+      </div>
 
-      <div className="nav flex-column">
+      <div className="sidebar-section-label">PANEL ADMINISTRADOR</div>
 
+      <nav className="sidebar-menu">
         {menu.map((item) => (
           <NavLink
             key={item.ruta}
             to={item.ruta}
             className={({ isActive }) =>
-              `nav-link text-white py-3 px-4 ${
-                isActive ? "bg-danger" : ""
-              }`
+              `sidebar-link ${isActive ? "active" : ""}`
             }
           >
-            <span className="me-3">
-              {item.icono}
+            <span className="sidebar-link-icon">{item.icono}</span>
+            <span className="sidebar-link-copy">
+              <strong>{item.nombre}</strong>
+              {item.detalle && <small>{item.detalle}</small>}
             </span>
-
-            {item.nombre}
           </NavLink>
         ))}
+      </nav>
 
+      <div className="sidebar-bottom">
+        <div className="sidebar-profile">
+          <div className="sidebar-avatar">AV</div>
+          <div className="sidebar-profile-copy">
+            <strong>Administrador Vito</strong>
+            <span>Administrador</span>
+          </div>
+          <button
+            type="button"
+            className="sidebar-logout-icon"
+            onClick={cerrarSesion}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+          >
+            <FaSignOutAlt />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="sidebar-logout-text"
+          onClick={cerrarSesion}
+        >
+          Cerrar sesión
+        </button>
       </div>
-    </div>
+    </aside>
   );
 }
