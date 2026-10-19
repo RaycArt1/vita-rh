@@ -8,6 +8,8 @@ const CAMPOS_OBLIGATORIOS = [
   "correo",
   "fechaIngreso",
   "puestoId",
+  "areaId",
+  "salarioBase",
 ];
 
 function idValido(valor) {
@@ -72,8 +74,14 @@ export async function crearEmpleado(req, res) {
     }
 
     const puestoId = idValido(req.body.puestoId);
-    if (!puestoId) {
-      return res.status(400).json({ mensaje: "puestoId debe ser un número entero positivo" });
+    const areaId = idValido(req.body.areaId);
+    if (!puestoId || !areaId) {
+      return res.status(400).json({ mensaje: "puestoId y areaId deben ser números enteros positivos" });
+    }
+
+    const salarioBase = Number(req.body.salarioBase);
+    if (!Number.isFinite(salarioBase) || salarioBase <= 0) {
+      return res.status(400).json({ mensaje: "salarioBase debe ser un número mayor que cero" });
     }
 
     if (!(await empleadoService.existePuesto(puestoId))) {
@@ -93,6 +101,8 @@ export async function crearEmpleado(req, res) {
       correo: req.body.correo,
       fechaIngreso,
       puestoId,
+      areaId,
+      salarioBase,
     });
 
     res.status(201).json(empleado);
