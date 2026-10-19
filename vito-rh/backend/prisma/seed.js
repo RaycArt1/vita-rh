@@ -4,38 +4,26 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Área
+  // Área (nombre es UNIQUE, así que upsert es seguro)
   const area = await prisma.area.upsert({
     where: { nombre: "Administración" },
     update: {},
-    create: {
-      nombre: "Administración",
-    },
+    create: { nombre: "Administración" },
   });
 
-  // Puesto
-  const puesto = await prisma.puesto.create({
-    data: {
-      nombre: "Administrador",
-      areaId: area.id,
-    },
-  }).catch(async () => {
-    return prisma.puesto.findFirst({
-      where: {
-        nombre: "Administrador",
-        areaId: area.id,
-      },
+  // Puesto (no tiene UNIQUE, así que se busca antes de crear)
+  let puesto = await prisma.puesto.findFirst({
+    where: { nombre: "Administrador", areaId: area.id },
+  });
+  if (!puesto) {
+    puesto = await prisma.puesto.create({
+      data: { nombre: "Administrador", areaId: area.id },
     });
-  });
+  }
 
-  // Contraseña
-  const password = await bcrypt.hash("admin123", 10);
-
-  // Empleado
+  // Empleado de prueba (correo es UNIQUE)
   const empleado = await prisma.empleado.upsert({
-    where: {
-      correo: "admin@vito.com",
-    },
+    where: { correo: "admin@vito.com" },
     update: {},
     create: {
       nombres: "Administrador",
@@ -43,55 +31,25 @@ async function main() {
       identidad: "0000000000000",
       telefono: "99999999",
       correo: "admin@vito.com",
-      fechaIngreso: new Date(),
       puestoId: puesto.id,
+      areaId: area.id,
+      salarioBase: 0,
+      fechaIngreso: new Date(),
     },
   });
 
-  // Usuario
+  // Usuario de prueba con rol GERENTE (username es UNIQUE)
+  const password = await bcrypt.hash("admin123", 10);
   await prisma.usuario.upsert({
-    where: {
-      username: "admin",
-    },
+    where: { username: "admin" },
     update: {},
     create: {
       username: "admin",
       password,
-      rol: "ADMIN",
+      rol: "GERENTE",
       empleadoId: empleado.id,
     },
   });
-
-  // Turnos
-  const turnos = [
-    {
-      nombre: "Mañana",
-      horaInicio: "08:00",
-      horaFin: "16:00",
-    },
-    {
-      nombre: "Tarde",
-      horaInicio: "16:00",
-      horaFin: "22:00",
-    },
-    {
-      nombre: "Noche",
-      horaInicio: "22:00",
-      horaFin: "06:00",
-    },
-  ];
-
-  for (const turno of turnos) {
-    const existe = await prisma.turno.findFirst({
-      where: { nombre: turno.nombre },
-    });
-
-    if (!existe) {
-      await prisma.turno.create({
-        data: turno,
-      });
-    }
-  }
 
   console.log("✅ Base de datos inicializada correctamente");
 }
