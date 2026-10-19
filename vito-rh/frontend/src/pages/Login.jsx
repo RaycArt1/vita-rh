@@ -62,7 +62,27 @@ export default function Login() {
         JSON.stringify(resultado.usuario)
       );
 
-      navigate("/dashboard", { replace: true });
+      const rol = resultado.usuario.rol;
+
+switch (rol) {
+  case "ADMINISTRADOR":
+    const rol = resultado.usuario.rol;
+
+if (rol === "CHEF") {
+  navigate("/chef/dashboard", { replace: true });
+} else {
+  navigate("/dashboard", { replace: true });
+}
+    break;
+
+  case "CHEF":
+    navigate("/chef/dashboard", { replace: true });
+    break;
+
+  default:
+    navigate("/dashboard", { replace: true });
+    break;
+}
     } catch (err) {
       const mensaje =
         err.response?.data?.message ||

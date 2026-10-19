@@ -6,6 +6,8 @@ import Empleados from "../pages/Empleados";
 import Horarios from "../pages/Horarios";
 import Vacaciones from "../pages/Vacaciones";
 import Expedientes from "../pages/Expedientes";
+import Usuarios from "../pages/Usuarios";
+import ChefDashboard from "../pages/Chef/ChefDashboard";
 
 export default function AppRouter() {
   return (
@@ -18,6 +20,8 @@ export default function AppRouter() {
       <Route path="/horarios" element={<Horarios />} />
       <Route path="/vacaciones" element={<Vacaciones />} />
       <Route path="/expedientes" element={<Expedientes />} />
+      <Route path="/usuarios" element={<Usuarios />} />
+      <Route path="/chef/dashboard" element={<ChefDashboard />} />
     </Routes>
   );
 }
