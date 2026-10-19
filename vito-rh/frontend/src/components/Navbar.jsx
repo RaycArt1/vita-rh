@@ -1,13 +1,12 @@
+
 export default function Navbar() {
   return (
-    <nav className="navbar bg-white shadow-sm px-4">
-      <span className="navbar-brand mb-0 h4">
-        Sistema de Recursos Humanos
+    <header className="dashboard-topbar">
+      <span>Vito Pizzería · Gestión de Recursos Humanos</span>
+      <span className="dashboard-topbar-status">
+        <span className="dashboard-status-dot" />
+        Entorno de demostración
       </span>
-
-      <span className="fw-semibold">
-        
-      </span>
-    </nav>
+    </header>
   );
 }

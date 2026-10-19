@@ -1,3 +1,4 @@
+
 import { Card } from "react-bootstrap";
 
 export default function StatCard({
@@ -5,29 +6,25 @@ export default function StatCard({
   valor,
   icono,
   color,
+  detalle,
 }) {
   return (
-    <Card className="shadow-sm border-0 h-100">
+    <Card className={`dashboard-stat-card stat-${color} h-100`}>
       <Card.Body>
-
-        <div className="d-flex justify-content-between align-items-center">
-
-          <div>
-            <h6 className="text-muted mb-2">
-              {titulo}
-            </h6>
-
-            <h2 className="fw-bold">
-              {valor}
-            </h2>
-          </div>
-
-          <div className={`fs-1 text-${color}`}>
+        <div className="stat-card-top">
+          <div className={`stat-icon stat-icon-${color}`}>
             {icono}
           </div>
 
+          {detalle && (
+            <span className={`stat-detail stat-detail-${color}`}>
+              {detalle}
+            </span>
+          )}
         </div>
 
+        <div className="stat-value">{valor}</div>
+        <div className="stat-title">{titulo}</div>
       </Card.Body>
     </Card>
   );

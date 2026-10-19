@@ -7,111 +7,286 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ===================== ENUMS =====================
+
+// Activo o dado de baja
 enum EstadoEmpleado {
   ACTIVO
   INACTIVO
 }
 
-enum EstadoVacacion {
+// Roles del sistema (documento: gerente, chef, empleado)
+enum RolUsuario {
+  GERENTE
+  CHEF
+  EMPLEADO
+}
+
+// Tipos de ausencia
+enum TipoSolicitud {
+  VACACION
+  PERMISO
+  INCAPACIDAD
+}
+
+enum EstadoSolicitud {
   PENDIENTE
   APROBADA
   RECHAZADA
 }
 
+// Los valores de turno son los de la RN-006. @map guarda el texto exacto en SQLite
+enum TurnoHorario {
+  T12_20 @map("12:00-20:00")
+  T12_22 @map("12:00-22:00")
+}
+
+enum EstadoHorario {
+  ACTIVO
+  MODIFICADO
+}
+
+enum TipoNotificacion {
+  HORARIO
+  VACACION
+  LLAMADO
+  NOMINA
+}
+
+enum AccionBitacora {
+  INSERT
+  UPDATE
+  DELETE
+}
+
+
+enum EstadoCandidato {
+  EN_PROCESO
+  CONTRATADO
+  DESCARTADO
+}
+
+enum ResultadoEntrevista {
+  APROBADO
+  REPROBADO
+  PENDIENTE
+}
+
+// ===================== CATÁLOGOS =====================
+
 model Area {
-  id        Int        @id @default(autoincrement())
-  nombre    String     @unique
-  puestos   Puesto[]
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+
+  puestos     Puesto[]
+  empleados   Empleado[]
+  horarios    Horario[]
 }
 
 model Puesto {
-  id         Int        @id @default(autoincrement())
-  nombre     String
-  areaId     Int
-  area        Area      @relation(fields: [areaId], references: [id])
-  empleados  Empleado[]
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  areaId    Int
+
+  area      Area       @relation(fields: [areaId], references: [id])
+  empleados Empleado[]
 }
 
+// ===================== EMPLEADOS Y ACCESO =====================
+
 model Empleado {
-  id               Int                  @id @default(autoincrement())
-  nombres          String
-  apellidos        String
-  identidad        String               @unique
-  telefono         String
-  correo           String               @unique
-  fechaIngreso     DateTime
-  estado           EstadoEmpleado       @default(ACTIVO)
+  id           Int            @id @default(autoincrement())
+  nombres      String
+  apellidos    String
+  identidad    String         @unique 
+  telefono     String
+  correo       String         @unique 
+  puestoId     Int
+  areaId       Int            // se guarda directamente; debe coincidir con puesto.areaId (validación en el servicio)
+  salarioBase  Float          
+  fechaIngreso DateTime
+  estado       EstadoEmpleado @default(ACTIVO)
+  fechaBaja    DateTime?
+  motivoBaja   String?
 
-  puestoId         Int
-  puesto           Puesto               @relation(fields: [puestoId], references: [id])
+  // Vincula al candidato que fue contratado
+  candidatoId  Int?           @unique
 
-  usuario          Usuario?
-  expediente       Expediente?
-  horarios         Horario[]
-  vacaciones       Vacacion[]
-  llamados         LlamadoAtencion[]
+  puesto       Puesto         @relation(fields: [puestoId], references: [id])
+  area         Area           @relation(fields: [areaId], references: [id])
+  candidato    Candidato?     @relation(fields: [candidatoId], references: [id])
+
+  usuario      Usuario?
+  expedientes  Expediente[]
+  horarios     Horario[]
+  solicitudes  Solicitud[]
+  llamados     LlamadoAtencion[]
+  nominas      Nomina[]
 }
 
 model Usuario {
-  id          Int        @id @default(autoincrement())
-  username    String     @unique
-  password    String
-  rol         String
+  id           Int         @id @default(autoincrement())
+  username     String      @unique
+  password     String      // hash (bcrypt). 
+  rol          RolUsuario
+  activo       Boolean     @default(true)
+  ultimoAcceso DateTime?
+  empleadoId   Int         @unique
 
-  empleadoId  Int        @unique
-  empleado    Empleado   @relation(fields: [empleadoId], references: [id])
+  empleado            Empleado          @relation(fields: [empleadoId], references: [id])
+  expedientesCargados Expediente[]
+  solicitudesAprobadas Solicitud[]
+  horariosCreados     Horario[]
+  llamadosEmitidos    LlamadoAtencion[]
+  nominasRegistradas  Nomina[]
+  entrevistas         Entrevista[]
+  notificaciones      Notificacion[]
+  bitacora            Bitacora[]
 }
 
-model Turno {
-  id           Int        @id @default(autoincrement())
-  nombre       String
-  horaInicio   String
-  horaFin      String
+// ===================== EXPEDIENTE =====================
 
-  horarios     Horario[]
-}
-
-model Horario {
-  id           Int        @id @default(autoincrement())
-  fecha        DateTime
-
-  empleadoId   Int
-  empleado     Empleado   @relation(fields: [empleadoId], references: [id])
-
-  turnoId      Int
-  turno         Turno      @relation(fields: [turnoId], references: [id])
-}
-
-model Vacacion {
-  id            Int              @id @default(autoincrement())
-  fechaInicio   DateTime
-  fechaFin      DateTime
-  motivo        String?
-  estado        EstadoVacacion   @default(PENDIENTE)
-
+// Un empleado puede tener varios documentos (1:N). Por eso no lleva @unique
+model Expediente {
+  id            Int      @id @default(autoincrement())
+  tipoDocumento String   // contrato, identificación, carta de renuncia, etc.
+  archivo       String   // ruta o URL del archivo
+  fechaCarga    DateTime @default(now())
   empleadoId    Int
-  empleado      Empleado         @relation(fields: [empleadoId], references: [id])
+  cargadoPorId  Int
+
+  empleado      Empleado @relation(fields: [empleadoId], references: [id])
+  cargadoPor    Usuario  @relation(fields: [cargadoPorId], references: [id])
 }
+
+// ===================== RECLUTAMIENTO =====================
+
+model Candidato {
+  id             Int             @id @default(autoincrement())
+  nombre         String
+  apellido       String
+  telefono       String?
+  email          String?
+  puestoAplicado String          // texto libre, (no es FK)
+  cvArchivo      String?
+  estado         EstadoCandidato @default(EN_PROCESO)
+  fechaRegistro  DateTime        @default(now())
+
+  entrevistas    Entrevista[]
+  empleado       Empleado?
+}
+
+model Entrevista {
+  id               Int                 @id @default(autoincrement())
+  fase             Int                 // 1, 2 o 3. Validar en el servicio (Prisma no tiene CHECK)
+  resultado        ResultadoEntrevista @default(PENDIENTE)
+  observaciones    String?
+  fecha            DateTime
+  candidatoId      Int
+  entrevistadorId  Int
+
+  candidato        Candidato           @relation(fields: [candidatoId], references: [id])
+  entrevistador    Usuario             @relation(fields: [entrevistadorId], references: [id])
+}
+
+// ===================== HORARIOS =====================
+
+// Prisma no permite autoincrement en una PK compuesta en SQLite, así que se usa un id
+// autoincremental y una restricción única sobre la combinación.
+model Horario {
+  id            Int           @id @default(autoincrement())
+  fechaInicio   DateTime
+  fechaFin      DateTime      // validar fechaFin >= fechaInicio en el servicio
+  turno         TurnoHorario
+  estado        EstadoHorario @default(ACTIVO)
+  fechaCreacion DateTime      @default(now())
+  empleadoId    Int
+  areaId        Int
+  creadoPorId   Int
+
+  empleado      Empleado      @relation(fields: [empleadoId], references: [id])
+  area          Area          @relation(fields: [areaId], references: [id])
+  creadoPor     Usuario       @relation(fields: [creadoPorId], references: [id])
+
+  @@unique([empleadoId, fechaInicio, fechaFin])
+}
+
+// ===================== VACACIONES Y PERMISOS =====================
+
+// Reemplaza a la antigua tabla Vacacion por Solicitud
+model Solicitud {
+  id                 Int              @id @default(autoincrement())
+  tipoSolicitud      TipoSolicitud
+  fechaInicio        DateTime
+  fechaFin           DateTime         // validar fechaFin >= fechaInicio en el servicio
+  motivo             String?
+  estado             EstadoSolicitud  @default(PENDIENTE)
+  comentarioGerente  String?
+  aprobadoPorId      Int?             // lo llena el gerente al aprobar o rechazar
+  fechaSolicitud     DateTime         @default(now())
+  empleadoId         Int
+
+  empleado           Empleado         @relation(fields: [empleadoId], references: [id])
+  aprobadoPor        Usuario?         @relation(fields: [aprobadoPorId], references: [id])
+}
+
+// ===================== CONTROL DISCIPLINARIO =====================
 
 model LlamadoAtencion {
-  id            Int        @id @default(autoincrement())
-  fecha         DateTime
-  motivo        String
-  observaciones String?
+  id               Int      @id @default(autoincrement())
+  descripcionFalta String
+  tipoFalta        String
+  fecha            DateTime
+  numeroLlamado    Int      // 1 a 4 (RN-012). Validar en el servicio
+  firmadoEmpleado  Boolean  @default(false)
+  empleadoId       Int
+  emisorId         Int
 
-  empleadoId    Int
-  empleado      Empleado   @relation(fields: [empleadoId], references: [id])
+  empleado         Empleado @relation(fields: [empleadoId], references: [id])
+  emisor           Usuario  @relation(fields: [emisorId], references: [id])
 }
 
-model Expediente {
-  id                  Int        @id @default(autoincrement())
+// ===================== NÓMINA =====================
 
-  contrato            String?
-  identidadArchivo    String?
-  confidencialidad    String?
-  hojaVida            String?
-  observaciones       String?
+model Nomina {
+  id              Int      @id @default(autoincrement())
+  periodoInicio   DateTime
+  periodoFin      DateTime
+  salarioBase     Float
+  deducciones     Float    @default(0)
+  bonificaciones  Float    @default(0)
+  salarioNeto     Float
+  fechaPago       DateTime
+  empleadoId      Int
+  registradoPorId Int
 
-  empleadoId          Int        @unique
-  empleado            Empleado   @relation(fields: [empleadoId], references: [id])
+  empleado        Empleado @relation(fields: [empleadoId], references: [id])
+  registradoPor   Usuario  @relation(fields: [registradoPorId], references: [id])
+}
+
+// ===================== NOTIFICACIONES Y AUDITORÍA =====================
+
+model Notificacion {
+  id          Int              @id @default(autoincrement())
+  tipo        TipoNotificacion
+  mensaje     String
+  leida       Boolean          @default(false)
+  fechaEnvio  DateTime         @default(now())
+  usuarioId   Int
+
+  usuario     Usuario          @relation(fields: [usuarioId], references: [id])
+}
+
+model Bitacora {
+  id             Int            @id @default(autoincrement())
+  tablaAfectada  String
+  idRegistro     Int            // id del registro afectado en tablaAfectada
+  accion         AccionBitacora
+  descripcion    String?        // detalle del cambio
+  fechaHora      DateTime       @default(now())
+  ipOrigen       String?
+  usuarioId      Int
+
+  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
 }
