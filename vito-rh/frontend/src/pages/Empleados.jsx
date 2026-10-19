@@ -64,10 +64,10 @@ const empleadosFiltrados = empleados.filter((empleado) => {
   return (
     <MainLayout>
 
-      <Card className="shadow-sm">
+      <div className="empleados-pagina">
 
-        <Card.Header className="bg-white border-0 p-4">
-  <div className="d-flex justify-content-between align-items-center">
+        <div className="empleados-encabezado d-flex justify-content-between align-items-center">
+  
     <div>
       <small className="text-muted">
         {empleados.filter((e) => e.estado === "ACTIVO").length} activos · {empleados.length} total — Vito Pizzería
@@ -84,32 +84,56 @@ const empleadosFiltrados = empleados.filter((empleado) => {
       + Nuevo Empleado
     </button>
   </div>
-</Card.Header>
 
-        <Card.Body>
-          <div className="mb-4">
+
+        <div className="empleados-contenido" style={{ marginTop: "30px" }}>
+          <div
+  className="empleados-filtros"
+  style={{
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "nowrap",
+    gap: "10px",
+    width: "100%"
+  }}
+>
   <input
+  style={{ width: "230px", minWidth: "180px", flexShrink: 0 }}
     type="text"
-    className="form-control mb-3"
+    className="form-control empleados-buscador"
     placeholder="Buscar empleado o puesto..."
     value={busqueda}
     onChange={(e) => setBusqueda(e.target.value)}
   />
+<div
+  className="empleados-puestos"
+  style={{
+    display: "flex",
+    flexWrap: "nowrap",
+    gap: "4px",
+    flex: 1,
+    minWidth: 0,
+    overflowX: "auto"
+  }}
+>
 
-  <div className="d-flex flex-wrap gap-2">
+  
     {puestos.map((puesto) => (
       <button
-        key={puesto}
-        type="button"
-        className={`btn ${
-          filtroPuesto === puesto
-            ? "btn-danger"
-            : "btn-outline-secondary"
-        }`}
-        onClick={() => setFiltroPuesto(puesto)}
-      >
-        {puesto}
-      </button>
+  key={puesto}
+  type="button"
+  className={`btn ${filtroPuesto === puesto ? "btn-danger" : "btn-outline-secondary"}`}
+  style={{
+    fontSize: "10px",
+    padding: "6px 7px",
+    whiteSpace: "nowrap",
+    flexShrink: 0
+  }}
+  onClick={() => setFiltroPuesto(puesto)}
+>
+  {puesto}
+</button>
     ))}
   </div>
 </div>
@@ -124,15 +148,16 @@ const empleadosFiltrados = empleados.filter((empleado) => {
     {error}
   </div>
 )}
-          <Table striped bordered hover responsive>
+          <div style={{ marginTop: "24px" }}>
+  <Table hover responsive className="align-middle">
 
             <thead>
   <tr>
-    <th>EMPLEADO</th>
-    <th>PUESTO</th>
-    <th>FECHA INGRESO</th>
-    <th>ESTADO</th>
-    <th>CONTACTO</th>
+    <th style={{ color: "#6b7280", fontSize: "12px" }}>EMPLEADO</th>
+    <th style={{ color: "#6b7280",fontSize: "12px"  }}>PUESTO</th>
+    <th style={{ color: "#6b7280", fontSize: "12px"  }}>FECHA INGRESO</th>
+    <th style={{ color: "#6b7280", fontSize: "12px"  }}>ESTADO</th>
+    <th style={{ color: "#6b7280", fontSize: "12px" }}>CONTACTO</th>
   </tr>
 </thead>
 
@@ -207,10 +232,13 @@ const empleadosFiltrados = empleados.filter((empleado) => {
             </tbody>
 
           </Table>
+          </div>
 
-        </Card.Body>
+        </div>
 
-      </Card>
+
+      </div>
+      
 
     </MainLayout>
   );

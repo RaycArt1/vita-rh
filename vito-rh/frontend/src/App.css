@@ -1,8 +1,9 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .logo {
@@ -39,4 +40,73 @@
 
 .read-the-docs {
   color: #888;
+}
+/* Página de empleados */
+
+.empleados-pagina {
+  width: 100%;
+  padding: 8px 24px 24px;
+  margin: 0 auto;
+}
+.empleados-encabezado {
+  margin-bottom: 26px;
+}
+
+.empleados-contenido {
+  width: 100%;
+}
+
+.empleados-filtros {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.empleados-buscador {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  margin: 0 !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 12px;
+}
+
+.empleados-puestos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    overflow-x: visible;
+    margin-bottom: 20px;
+}
+
+.empleados-puestos .btn {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: #fff;
+  color: #555d6c;
+  
+}
+
+.empleados-puestos .btn-danger {
+  background: #d92f39;
+  border-color: #d92f39;
+  color: #fff;
+}
+
+.empleados-puestos .btn:hover {
+  background: #f3f4f6;
+  color: #333;
+}
+
+.empleados-puestos .btn-danger:hover {
+  background: #c52530;
+  color: #fff;
 }

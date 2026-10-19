@@ -6,7 +6,7 @@ export default function Navbar() {
       </span>
 
       <span className="fw-semibold">
-        Administrador
+        
       </span>
     </nav>
   );
