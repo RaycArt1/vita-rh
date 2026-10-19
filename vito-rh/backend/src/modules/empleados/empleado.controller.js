@@ -48,6 +48,24 @@ export async function obtenerEmpleados(req, res) {
   }
 }
 
+
+export async function obtenerAreas(req, res) {
+  try {
+    res.json(await empleadoService.obtenerAreas());
+  } catch (error) {
+    errorServidor(res, error);
+  }
+}
+
+export async function obtenerPuestos(req, res) {
+  try {
+    res.json(await empleadoService.obtenerPuestos());
+  } catch (error) {
+    errorServidor(res, error);
+  }
+}
+
+
 export async function obtenerEmpleado(req, res) {
   try {
     const id = idValido(req.params.id);
@@ -177,7 +195,11 @@ export async function desactivarEmpleado(req, res) {
       return res.status(404).json({ mensaje: "Empleado no encontrado" });
     }
 
-    const empleado = await empleadoService.desactivarEmpleado(id);
+    const motivoBaja = String(req.body?.motivoBaja ?? "").trim();
+const empleado = await empleadoService.desactivarEmpleado(
+  id,
+  motivoBaja || null
+);
     res.json(empleado);
   } catch (error) {
     errorServidor(res, error);
