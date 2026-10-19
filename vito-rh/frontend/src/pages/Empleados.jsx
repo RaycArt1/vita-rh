@@ -187,29 +187,33 @@ const empleadosFiltrados = empleados.filter((empleado) => {
 </div>
 
       <div>
-        <div className="fw-semibold">
-          {empleado.nombres} {empleado.apellidos}
-        </div>
+        <div className="fw-semibold" style={{ fontSize: "13px" }}>
+  {empleado.nombres} {empleado.apellidos}
+</div>
         <small className="text-muted">{empleado.correo}</small>
       </div>
     </div>
   </td>
 
   <td>
-    <span className="badge bg-light text-dark">
-      {empleado.puesto?.nombre || "Sin puesto"}
-    </span>
+    <span
+  className="badge bg-light"
+  style={{
+  fontSize: "11px",
+  fontWeight: 400,
+  color: "#000000"
+}}
+>
+  {empleado.puesto?.nombre || "Sin puesto"}
+</span>
   </td>
 
   <td>
-    {empleado.fechaIngreso
-      ? new Date(empleado.fechaIngreso).toLocaleDateString("es-HN", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          timeZone: "UTC",
-        })
-      : "Sin fecha"}
+  <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+  {empleado.fechaIngreso
+    ? new Date(empleado.fechaIngreso).toISOString().slice(0, 10)
+    : "Sin fecha"}
+</span>
   </td>
 
   <td>
@@ -224,7 +228,11 @@ const empleadosFiltrados = empleados.filter((empleado) => {
     </span>
   </td>
 
-  <td>{empleado.telefono || "Sin teléfono"}</td>
+  <td>
+  <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+    {empleado.telefono || "Sin teléfono"}
+  </span>
+</td>
 </tr>
 
               ))}
