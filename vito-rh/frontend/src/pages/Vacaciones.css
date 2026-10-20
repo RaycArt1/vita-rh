@@ -1,0 +1,77 @@
+:root {
+  --vac-ink: #0d1117;
+  --vac-mut: #6b7280;
+  --vac-label: #9ca3af;
+  --vac-red: #c62828;
+  --vac-green: #10b981;
+  --vac-amber: #f59e0b;
+}
+
+.vac-page {
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  color: var(--vac-ink);
+  padding: 0px 40px 60px;
+}
+.vac-page button { font-family: inherit; cursor: pointer; border: 0; }
+
+.vac-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.vac-top p { font-size: 13px; color: var(--vac-mut); }
+.vac-top h1 { font-family: 'Instrument Sans', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-top: 2px; }
+.vac-btns { display: flex; gap: 12px; }
+.vac-btn { padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 13.5px; }
+.vac-btn.w { background: #fff; color: var(--vac-ink); border: 1px solid #e5e7eb; }
+.vac-btn.r { background: var(--vac-red); color: #fff; box-shadow: 0 6px 18px rgba(198, 40, 40, 0.3); }
+
+.vac-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 30px 0 24px; }
+.vac-stat { background: #fff; border-radius: 16px; padding: 22px 24px; display: flex; gap: 16px; align-items: center; box-shadow: 0 2px 12px rgba(13, 17, 23, 0.05); }
+.vac-ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+.vac-stat-body { flex: 1; }
+.vac-stat small { font-size: 11px; color: var(--vac-label); }
+.vac-stat strong { display: block; font-family: 'Instrument Sans', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.1; }
+.vac-bar { height: 5px; background: #eef0f4; border-radius: 9px; margin-top: 6px; overflow: hidden; }
+.vac-bar i { display: block; height: 100%; border-radius: 9px; }
+
+.vac-filters { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.vac-chip { padding: 9px 18px; border-radius: 999px; background: #fff; border: 1px solid #e5e7eb; font-size: 12.5px; font-weight: 600; color: var(--vac-mut); }
+.vac-chip.on { background: var(--vac-red); border-color: var(--vac-red); color: #fff; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3); }
+
+.vac-req { background: #fff; border-radius: 16px; padding: 18px 20px; display: flex; gap: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(13, 17, 23, 0.05); transition: all 0.2s; }
+.vac-req:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(67, 83, 212, 0.10); }
+.vac-av { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 12.5px; flex-shrink: 0; border: 3px solid; font-family: 'Instrument Sans', sans-serif; }
+.vac-body { flex: 1; min-width: 0; }
+.vac-row1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vac-row1 b { font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 700; }
+.vac-role { font-size: 12px; color: var(--vac-label); }
+.vac-tag { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; }
+.vac-tag::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.vac-tag.p { background: #fef3c7; color: #92400e; }
+.vac-tag.a { background: #d1fae5; color: #065f46; }
+.vac-tag.x { background: #fee2e2; color: #991b1b; }
+.vac-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; color: #fff; }
+.vac-type.t-v { background: var(--vac-red); }
+.vac-type.t-p { background: #991b1b; }
+.vac-type.t-m { background: #059669; }
+.vac-row2 { display: flex; gap: 14px; align-items: center; margin-top: 8px; font-size: 12.5px; flex-wrap: wrap; }
+.vac-date { font-family: 'DM Mono', monospace; color: var(--vac-mut); }
+.vac-row2 em { color: var(--vac-mut); }
+.vac-prog { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.vac-prog .vac-bar { flex: 1; margin: 0; height: 6px; }
+.vac-prog span { font-size: 11.5px; color: var(--vac-label); }
+.vac-act { display: flex; gap: 10px; align-items: flex-start; }
+.vac-ok { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 12.5px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.vac-no { background: #fee2e2; color: #991b1b; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 12.5px; }
+.vac-empty { text-align: center; color: var(--vac-mut); padding: 40px; }
+
+.vac-modal-bg { position: fixed; inset: 0; background: rgba(13, 17, 23, 0.45); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.vac-modal { background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; }
+.vac-modal h2 { font-family: 'Instrument Sans', sans-serif; font-size: 20px; font-weight: 700; }
+.vac-modal label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--vac-mut); }
+.vac-modal input, .vac-modal select, .vac-modal textarea { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 13px; color: var(--vac-ink); }
+.vac-modal-fechas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vac-modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+@media (max-width: 900px) {
+  .vac-stats { grid-template-columns: 1fr; }
+  .vac-req { flex-wrap: wrap; }
+  .vac-act { width: 100%; }
+}
