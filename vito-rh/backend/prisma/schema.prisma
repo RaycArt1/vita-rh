@@ -133,6 +133,8 @@ model Usuario {
   rol          RolUsuario
   activo       Boolean     @default(true)
   ultimoAcceso DateTime?
+  tokenRecuperacion  String?    // hash del token de recuperación (nunca el token en texto plano)
+  tokenExpira        DateTime?  // fecha y hora en que el enlace deja de servir
   empleadoId   Int         @unique
 
   empleado            Empleado          @relation(fields: [empleadoId], references: [id])
