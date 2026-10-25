@@ -4,24 +4,84 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Área (nombre es UNIQUE, así que upsert es seguro)
-  const area = await prisma.area.upsert({
-    where: { nombre: "Administración" },
-    update: {},
-    create: { nombre: "Administración" },
-  });
+  // Áreas y puestos iniciales de Vito RH.
+  // Se reutilizan los registros existentes para evitar duplicados.
+  const estructura = [
+    {
+      nombre: "Administración",
+      puestos: [
+        "Administrador",
+        "Gerente de operaciones",
+        "Asistente administrativo",
+        "Supervisor",
+      ],
+    },
+    {
+      nombre: "Cocina",
+      puestos: [
+        "Chef ejecutivo",
+        "Pizzero",
+        "Cocinero",
+        "Auxiliar de cocina",
+      ],
+    },
+    {
+      nombre: "Servicio al cliente",
+      puestos: [
+        "Mesero/a",
+        "Cajero/a",
+        "Supervisor de servicio",
+      ],
+    },
+    {
+      nombre: "Limpieza y mantenimiento",
+      puestos: [
+        "Personal de limpieza",
+        "Auxiliar de mantenimiento",
+      ],
+    },
+  ];
 
-  // Puesto (no tiene UNIQUE, así que se busca antes de crear)
-  let puesto = await prisma.puesto.findFirst({
-    where: { nombre: "Administrador", areaId: area.id },
-  });
-  if (!puesto) {
-    puesto = await prisma.puesto.create({
-      data: { nombre: "Administrador", areaId: area.id },
+  // Crear las áreas y sus puestos.
+  for (const item of estructura) {
+    const area = await prisma.area.upsert({
+      where: { nombre: item.nombre },
+      update: {},
+      create: { nombre: item.nombre },
     });
+
+    for (const nombrePuesto of item.puestos) {
+      const existente = await prisma.puesto.findFirst({
+        where: {
+          nombre: nombrePuesto,
+          areaId: area.id,
+        },
+      });
+
+      if (!existente) {
+        await prisma.puesto.create({
+          data: {
+            nombre: nombrePuesto,
+            areaId: area.id,
+          },
+        });
+      }
+    }
   }
 
-  // Empleado de prueba (correo es UNIQUE)
+  // Obtener Administración y el puesto Administrador.
+  const areaAdmin = await prisma.area.findUnique({
+    where: { nombre: "Administración" },
+  });
+
+  const puestoAdmin = await prisma.puesto.findFirst({
+    where: {
+      nombre: "Administrador",
+      areaId: areaAdmin.id,
+    },
+  });
+
+  // Crear el empleado de prueba si todavía no existe.
   const empleado = await prisma.empleado.upsert({
     where: { correo: "admin@vito.com" },
     update: {},
@@ -31,31 +91,35 @@ async function main() {
       identidad: "0000000000000",
       telefono: "99999999",
       correo: "admin@vito.com",
-      puestoId: puesto.id,
-      areaId: area.id,
+      puestoId: puestoAdmin.id,
+      areaId: areaAdmin.id,
       salarioBase: 0,
       fechaIngreso: new Date(),
     },
   });
 
-  // Usuario de prueba con rol GERENTE (username es UNIQUE)
+  // Crear el usuario administrador si todavía no existe.
   const password = await bcrypt.hash("admin123", 10);
+
   await prisma.usuario.upsert({
     where: { username: "admin" },
     update: {},
     create: {
       username: "admin",
       password,
-      rol: "GERENTE",
+      rol: "ADMINISTRADOR",
       empleadoId: empleado.id,
     },
   });
 
-  console.log("✅ Base de datos inicializada correctamente");
+  console.log("✅ Áreas, puestos y usuario inicializados correctamente.");
 }
 
 main()
-  .catch(console.error)
+  .catch((error) => {
+    console.error("Error al inicializar la base de datos:", error);
+    process.exitCode = 1;
+  })
   .finally(async () => {
     await prisma.$disconnect();
   });
