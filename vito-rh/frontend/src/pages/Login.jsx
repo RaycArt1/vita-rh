@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 import "./Login.css";
 
@@ -64,28 +64,15 @@ export default function Login() {
 
       const rol = resultado.usuario.rol;
 
-switch (rol) {
-  case "ADMINISTRADOR":
-    const rol = resultado.usuario.rol;
-
-if (rol === "CHEF") {
+  if (rol === "CHEF") {
   navigate("/chef/dashboard", { replace: true });
-} else {
+  } else {
   navigate("/dashboard", { replace: true });
-}
-    break;
-
-  case "CHEF":
-    navigate("/chef/dashboard", { replace: true });
-    break;
-
-  default:
-    navigate("/dashboard", { replace: true });
-    break;
-}
+  }
     } catch (err) {
+
       const mensaje =
-        err.response?.data?.message ||
+        err.response?.data?.mensaje ||
         err.message ||
         "No se pudo iniciar sesión. Inténtalo nuevamente.";
 
@@ -203,6 +190,10 @@ if (rol === "CHEF") {
               {cargando ? "Verificando..." : "Iniciar sesión"}
             </button>
           </form>
+
+          <p className="login-demo-note">
+          <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+          </p>
 
           <div className="login-demo">
             <p className="login-demo-title">ACCESOS DE DEMOSTRACIÓN</p>
