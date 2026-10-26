@@ -7,6 +7,7 @@ import Horarios from "../pages/Horarios";
 import Vacaciones from "../pages/Vacaciones";
 import Expedientes from "../pages/Expedientes";
 import Usuarios from "../pages/Usuarios";
+import Reclutamiento from "../pages/Reclutamiento";
 import ChefDashboard from "../pages/Chef/ChefDashboard";
 import RecuperarContrasena from "../pages/RecuperarContrasena";
 import RestablecerContrasena from "../pages/RestablecerContrasena";
@@ -25,6 +26,7 @@ export default function AppRouter() {
       <Route path="/vacaciones" element={<Vacaciones />} />
       <Route path="/expedientes" element={<Expedientes />} />
       <Route path="/usuarios" element={<Usuarios />} />
+      <Route path="/reclutamiento" element={<Reclutamiento />} />
       <Route path="/chef/dashboard" element={<ChefDashboard />} />
     </Routes>
   );

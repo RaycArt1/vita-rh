@@ -1,0 +1,330 @@
+
+.reclutamiento {
+  padding: 28px 22px;
+  background: #f7f7f8;
+  min-height: 100vh;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
+
+.reclutamiento-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 34px;
+}
+
+.reclutamiento-subtitulo {
+  font-size: 13px;
+  color: #667085;
+  margin: 0 0 6px;
+}
+
+.reclutamiento-encabezado h1 {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.reclutamiento-acciones {
+  display: flex;
+  gap: 10px;
+}
+
+.reclutamiento-acciones button {
+  border-radius: 9px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reclutamiento-btn-secundario {
+  background: white;
+  color: #344054;
+  border: 1px solid #e5e7eb;
+}
+
+.reclutamiento-btn-principal {
+  background: #e63946;
+  color: white;
+  border: 1px solid #e63946;
+  box-shadow: 0 4px 12px #e6394630;
+}
+
+.reclutamiento-vacantes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.reclutamiento-vacante {
+  background: white;
+  padding: 20px;
+  border-radius: 17px;
+  box-shadow: 0 3px 14px #00000009;
+}
+
+.reclutamiento-etiqueta {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: #fde8e8;
+  color: #a62630;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.reclutamiento-vacante h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.reclutamiento-vacante p {
+  font-size: 13px;
+  color: #7b8190;
+  margin: 0;
+}
+
+.reclutamiento-pipeline {
+  background: white;
+  padding: 22px;
+  border-radius: 18px;
+  margin-bottom: 24px;
+  box-shadow: 0 3px 14px #00000009;
+}
+
+.reclutamiento-pipeline h2 {
+  color: #98a2b3;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.reclutamiento-etapas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.reclutamiento-etapa {
+  min-width: 94px;
+  padding: 16px 12px;
+  text-align: center;
+  border: 1px solid #e9e9ec;
+  background: #fcfafb;
+  border-radius: 12px;
+}
+
+.reclutamiento-etapa strong {
+  display: block;
+  font-size: 24px;
+  color: #a62630;
+  margin-bottom: 8px;
+}
+
+.reclutamiento-etapa span {
+  color: #747b89;
+  font-size: 11px;
+}
+
+.reclutamiento-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reclutamiento-candidato {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: white;
+  padding: 17px 20px;
+  border-radius: 17px;
+  box-shadow: 0 3px 14px #00000009;
+}
+
+.reclutamiento-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fce8e9;
+  color: #a62630;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.reclutamiento-datos {
+  flex: 1;
+  min-width: 0;
+}
+
+.reclutamiento-nombre-estado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reclutamiento-nombre-estado h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.reclutamiento-estado {
+  background: #fde8e8;
+  color: #a62630;
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.reclutamiento-datos p {
+  font-size: 12px;
+  color: #89909c;
+  margin: 6px 0 0;
+}
+
+.reclutamiento-puntuacion {
+  text-align: right;
+}
+
+.reclutamiento-barras {
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  height: 24px;
+}
+
+.reclutamiento-barras span {
+  width: 7px;
+  height: 15px;
+  background: #e4e7ec;
+  border-radius: 3px;
+}
+
+.reclutamiento-barras span.activa {
+  background: #e63946;
+}
+
+.reclutamiento-puntuacion small {
+  display: block;
+  color: #98a2b3;
+  margin-top: 5px;
+}
+
+@media (max-width: 850px) {
+  .reclutamiento-encabezado {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reclutamiento-vacantes {
+    grid-template-columns: 1fr;
+  }
+
+  .reclutamiento-candidato {
+    flex-wrap: wrap;
+  }
+
+  .reclutamiento-puntuacion {
+    margin-left: auto;
+  }
+}
+
+.reclutamiento-modal-fondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(25, 30, 50, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.reclutamiento-modal {
+  width: 100%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 22px;
+  padding: 25px;
+  border-top: 4px solid #e63946;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+}
+
+.reclutamiento-modal-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+}
+
+.reclutamiento-modal-encabezado h2 {
+  font-size: 17px;
+  margin: 0 0 6px;
+}
+
+.reclutamiento-modal-encabezado p {
+  color: #888;
+  font-size: 12px;
+  margin: 0;
+}
+
+.reclutamiento-modal form {
+  display: flex;
+  flex-direction: column;
+}
+
+.reclutamiento-modal label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #777;
+  margin: 12px 0 6px;
+}
+
+.reclutamiento-modal input,
+.reclutamiento-modal select,
+.reclutamiento-modal textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 11px;
+  background: white;
+  font: inherit;
+  font-size: 14px;
+}
+
+.reclutamiento-modal input:focus,
+.reclutamiento-modal select:focus,
+.reclutamiento-modal textarea:focus {
+  outline: 2px solid #f3a0a5;
+  border-color: #e63946;
+}
+
+.reclutamiento-modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.reclutamiento-modal-acciones button,
+.reclutamiento-modal-encabezado button {
+  padding: 11px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+}
