@@ -1,253 +1,145 @@
-import {
-    Modal,
-    Button,
-    Form,
-    Card
-} from "react-bootstrap";
 
-import { useState } from "react";
+import { Modal, Button, Form, Card, Alert } from "react-bootstrap";
+import { useEffect, useState } from "react";
 
 export default function EditTurnoModal({
-
-    show,
-
-    onHide,
-
-    empleado,
-
-    fecha,
-
-    onSave
-
+  show,
+  onHide,
+  empleado,
+  fecha,
+  onSave,
 }) {
+  const [horaFin, setHoraFin] = useState("20:00");
+  const [error, setError] = useState("");
 
-    const [estado, setEstado] = useState("Trabaja");
+  useEffect(() => {
+    if (!show) return;
 
-    const [horaInicio, setHoraInicio] = useState("12:00 PM");
+    setError("");
+    setHoraFin(
+      empleado?.turno === "T12_22" ||
+        empleado?.horaFin === "22:00"
+        ? "22:00"
+        : "20:00"
+    );
+  }, [show, empleado, fecha]);
 
-    const [horaFin, setHoraFin] = useState("8:00 PM");
-
-    function guardar(){
-
-        onSave({
-
-            ...empleado,
-
-            estado,
-
-            horaInicio,
-
-            horaFin
-
-        });
-
+  async function guardar() {
+    if (!empleado || !fecha) {
+      setError("Seleccioná un empleado y una fecha.");
+      return;
     }
 
-    return(
-
-        <Modal
-
-            show={show}
-
-            onHide={onHide}
-
-            centered
-
-        >
-
-            <Modal.Header closeButton>
-
-                <Modal.Title>
-
-                    Modificar Turno
-
-                </Modal.Title>
-
-            </Modal.Header>
-
-            <Modal.Body>
-
-                <Card className="mb-4">
-
-                    <Card.Body>
-
-                        <h5>
-
-                            {empleado?.nombre}
-
-                        </h5>
-
-                        <div>
-
-                            {empleado?.area}
-
-                        </div>
-
-                        <small className="text-muted">
-
-                            Día {fecha}
-
-                        </small>
-
-                    </Card.Body>
-
-                </Card>
-
-                <Form>
-
-                    <Form.Group className="mb-4">
-
-                        <Form.Label>
-
-                            Estado
-
-                        </Form.Label>
-
-                        <Form.Check
-
-                            type="radio"
-
-                            label="Trabaja"
-
-                            checked={estado==="Trabaja"}
-
-                            onChange={()=>setEstado("Trabaja")}
-
-                        />
-
-                        <Form.Check
-
-                            type="radio"
-
-                            label="Descansa"
-
-                            checked={estado==="Descansa"}
-
-                            onChange={()=>setEstado("Descansa")}
-
-                        />
-
-                    </Form.Group>
-
-                    {
-
-                        estado==="Trabaja" &&
-
-                        <>
-
-                            <Form.Group className="mb-3">
-
-                                <Form.Label>
-
-                                    Hora Inicio
-
-                                </Form.Label>
-
-                                <Form.Select
-
-                                    value={horaInicio}
-
-                                    onChange={(e)=>setHoraInicio(e.target.value)}
-
-                                >
-
-                                    <option>
-
-                                        12:00 PM
-
-                                    </option>
-
-                                </Form.Select>
-
-                            </Form.Group>
-
-                            <Form.Group>
-
-                                <Form.Label>
-
-                                    Hora Fin
-
-                                </Form.Label>
-
-                                <Form.Select
-
-                                    value={horaFin}
-
-                                    onChange={(e)=>setHoraFin(e.target.value)}
-
-                                >
-
-                                    <option>
-
-                                        8:00 PM
-
-                                    </option>
-
-                                    <option>
-
-                                        10:00 PM
-
-                                    </option>
-
-                                </Form.Select>
-
-                            </Form.Group>
-
-                        </>
-
-                    }
-
-                    {
-
-                        estado==="Descansa" &&
-
-                        <Card
-                            bg="light"
-                            className="mt-3"
-                        >
-
-                            <Card.Body>
-
-                                🛌 Este empleado tendrá día libre.
-
-                            </Card.Body>
-
-                        </Card>
-
-                    }
-
-                </Form>
-
-            </Modal.Body>
-
-            <Modal.Footer>
-
-                <Button
-
-                    variant="secondary"
-
-                    onClick={onHide}
-
-                >
-
-                    Cancelar
-
-                </Button>
-
-                <Button
-
-                    onClick={guardar}
-
-                >
-
-                    Guardar Cambios
-
-                </Button>
-
-            </Modal.Footer>
-
-        </Modal>
-
+    const empleadoId = Number(
+      empleado.empleadoId ?? empleado.id
     );
 
+    const areaId = Number(
+      empleado.areaId ?? empleado.area?.id
+    );
+
+    if (!Number.isInteger(empleadoId) || empleadoId <= 0) {
+      setError(
+        "No se encontró el ID del empleado. Seleccioná un empleado registrado."
+      );
+      return;
+    }
+
+    if (!Number.isInteger(areaId) || areaId <= 0) {
+      setError(
+        "No se encontró el ID del área. Verificá el área asignada al empleado."
+      );
+      return;
+    }
+
+    setError("");
+
+    try {
+      await onSave({
+        empleadoId,
+        areaId,
+        fecha,
+        horaInicio: "12:00",
+        horaFin,
+        turno: horaFin === "22:00" ? "T12_22" : "T12_20",
+      });
+    } catch (err) {
+      setError(err.message || "No se pudo guardar el turno.");
+    }
+  }
+
+  const nombreEmpleado =
+    empleado?.nombreCompleto ??
+    empleado?.nombre ??
+    empleado?.nombres ??
+    empleado?.empleado?.nombreCompleto ??
+    empleado?.empleado?.nombre ??
+    "Empleado";
+
+  const nombreArea =
+    typeof empleado?.area === "string"
+      ? empleado.area
+      : empleado?.area?.nombre ??
+        empleado?.puesto?.area?.nombre ??
+        "Área no disponible";
+
+  return (
+    <Modal show={show} onHide={onHide} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Asignar turno</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <Card className="mb-4">
+          <Card.Body>
+            <h5>{nombreEmpleado}</h5>
+            <div>{nombreArea}</div>
+            <small className="text-muted">
+              Fecha: {fecha ?? "No seleccionada"}
+            </small>
+          </Card.Body>
+        </Card>
+
+        {error && (
+          <Alert variant="danger">
+            {error}
+          </Alert>
+        )}
+
+        <Form.Group>
+          <Form.Label>Horario de trabajo</Form.Label>
+
+          <Form.Select
+            value={horaFin}
+            onChange={(e) => setHoraFin(e.target.value)}
+          >
+            <option value="20:00">
+              12:00 p. m. – 8:00 p. m.
+            </option>
+            <option value="22:00">
+              12:00 p. m. – 10:00 p. m.
+            </option>
+          </Form.Select>
+
+          <Form.Text className="text-muted">
+            El turno se asignará al empleado seleccionado para la fecha indicada.
+          </Form.Text>
+        </Form.Group>
+      </Modal.Body>
+
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onHide}>
+          Cancelar
+        </Button>
+
+        <Button
+          variant="primary"
+          onClick={guardar}
+          disabled={!empleado || !fecha}
+        >
+          Guardar turno
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
 }
