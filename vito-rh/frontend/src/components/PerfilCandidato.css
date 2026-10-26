@@ -416,3 +416,46 @@
 .pc-botones-oferta .pc-boton-principal:hover {
   background-color: #c92f3b;
 }
+
+/* Documento adjunto de entrevista */
+.pc-documento-entrevista {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 18px 0;
+}
+
+.pc-documento-entrevista p {
+  margin: 0 0 12px;
+}
+
+.pc-documento-entrevista button {
+  background: white;
+  border: 1px solid #dfe3e8;
+  border-radius: 9px;
+  padding: 10px 16px;
+  color: #344054;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pc-documento-entrevista button:hover {
+  background: #f1f3f5;
+}
+
+.pc-panel .pc-boton-principal {
+  background: #e63946;
+  color: white;
+  border: none;
+  border-radius: 9px;
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.pc-panel .pc-boton-principal:hover {
+  background: #c92d39;
+}

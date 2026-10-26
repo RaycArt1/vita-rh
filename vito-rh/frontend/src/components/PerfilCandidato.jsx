@@ -27,6 +27,71 @@ export default function PerfilCandidato({
 );
 
 const [editandoOferta, setEditandoOferta] = useState(false);
+const [entrevista, setEntrevista] = useState(
+  candidato.entrevista || {
+    fecha: "",
+    tipo: "Presencial",
+    observaciones: "",
+    resultado: "Pendiente",
+    documento: null,
+  }
+);
+
+const [editandoEntrevista, setEditandoEntrevista] = useState(false);
+const [evaluacion, setEvaluacion] = useState({
+  puntuacion: candidato.evaluacion?.puntuacion ?? candidato.puntuacion ?? 0,
+  clasificacion: candidato.evaluacion?.clasificacion ?? "Informativo",
+  observaciones: candidato.evaluacion?.observaciones ?? "",
+});
+
+const [editandoEvaluacion, setEditandoEvaluacion] = useState(false);
+const guardarEntrevista = () => {
+  if (!entrevista.fecha || !entrevista.observaciones.trim()) {
+    alert("Completa la fecha y las observaciones de la entrevista.");
+    return;
+  }
+
+  const entrevistaActualizada = {
+    ...entrevista,
+    observaciones: entrevista.observaciones.trim(),
+  };
+
+  onActualizar({
+    ...candidato,
+    entrevista: entrevistaActualizada,
+  });
+
+  setEditandoEntrevista(false);
+};
+
+const guardarEvaluacion = () => {
+  const puntuacion = Number(evaluacion.puntuacion);
+
+  if (
+    !Number.isInteger(puntuacion) ||
+    puntuacion < 1 ||
+    puntuacion > 10
+  ) {
+    alert("La puntuación debe ser un número entero entre 1 y 10.");
+    return;
+  }
+
+  const evaluacionActualizada = {
+    ...evaluacion,
+    puntuacion,
+    observaciones: evaluacion.observaciones.trim(),
+  };
+
+  onActualizar({
+    ...candidato,
+    puntuacion,
+    evaluacion: evaluacionActualizada,
+  });
+
+  setEditandoEvaluacion(false);
+};
+
+
 const guardarOferta = () => {
   if (!oferta.salario || !oferta.fechaInicio) {
     alert("Completa el salario y la fecha de inicio.");
@@ -65,7 +130,27 @@ const responderOferta = (respuesta) => {
     oferta: ofertaActualizada,
   });
 };
-  
+  const registrarContratacion = () => {
+  if (
+    candidato.estado !== "Oferta" ||
+    candidato.oferta?.estado !== "Aceptada"
+  ) {
+    return;
+  }
+
+  const confirmar = window.confirm(
+    `¿Deseas confirmar la contratación de ${candidato.nombre}?`
+  );
+
+  if (!confirmar) {
+    return;
+  }
+
+  onActualizar({
+    ...candidato,
+    estado: "Contratado",
+  });
+};
 
 
 const etapasSeleccion = [
@@ -205,42 +290,297 @@ const avanzarEtapa = () => {
               </div>
             )}
 
-            {paso === 2 && (
-              <div className="pc-panel">
-                <h3>Entrevista del candidato</h3>
-                <p>
-                  Aquí registraremos la información de la entrevista,
-                  observaciones y documentos relacionados.
-                </p>
-                <span className="pc-etiqueta">
-                  Pendiente de registrar
-                </span>
-              </div>
-            )}
+ {paso === 2 && (
+  <div className="pc-panel">
+    <h3>Entrevista del candidato</h3>
 
-            {paso === 3 && (
-              <div className="pc-panel">
-                <h3>Evaluación del candidato</h3>
+    {editandoEntrevista ? (
+      <div className="pc-formulario-oferta">
+        <label>
+          FECHA DE ENTREVISTA
+          <input
+            type="date"
+            value={entrevista.fecha}
+            onChange={(e) =>
+              setEntrevista({
+                ...entrevista,
+                fecha: e.target.value,
+              })
+            }
+          />
+        </label>
 
-                <div className="pc-evaluacion">
-                  <strong>{candidato.puntuacion ?? 0}/10</strong>
-                  <div>
-                    <b>Resultado registrado</b>
-                    <p>Competencias, experiencia y ajuste al cargo.</p>
-                  </div>
-                </div>
+        <label>
+          TIPO DE ENTREVISTA
+          <select
+            value={entrevista.tipo}
+            onChange={(e) =>
+              setEntrevista({
+                ...entrevista,
+                tipo: e.target.value,
+              })
+            }
+          >
+            <option value="Presencial">Presencial</option>
+            <option value="Virtual">Virtual</option>
+            <option value="Telefónica">Telefónica</option>
+          </select>
+        </label>
 
-                <label className="pc-label">
-                  CLASIFICACIÓN ADICIONAL
-                  <select defaultValue="Informativo">
-                    <option>Informativo</option>
-                    <option>Bueno</option>
-                    <option>Excelente</option>
-                    <option>Requiere seguimiento</option>
-                  </select>
-                </label>
-              </div>
-            )}
+        <label>
+          OBSERVACIONES
+          <textarea
+            rows="4"
+            value={entrevista.observaciones}
+            onChange={(e) =>
+              setEntrevista({
+                ...entrevista,
+                observaciones: e.target.value,
+              })
+            }
+            placeholder="Escribe las observaciones de la entrevista..."
+          />
+        </label>
+<label>
+  DOCUMENTO DE ENTREVISTA (PDF O IMAGEN)
+  <input
+    type="file"
+    accept=".pdf,.jpg,.jpeg,.png"
+    onChange={(e) => {
+      const archivo = e.target.files?.[0];
+
+      if (!archivo) return;
+
+      if (
+        ![
+          "application/pdf",
+          "image/jpeg",
+          "image/png",
+        ].includes(archivo.type)
+      ) {
+        alert("Selecciona un archivo PDF, JPG o PNG.");
+        e.target.value = "";
+        return;
+      }
+
+      setEntrevista({
+        ...entrevista,
+        documento: archivo,
+      });
+    }}
+  />
+</label>
+
+{entrevista.documento && (
+  <p>
+    Documento seleccionado: {entrevista.documento.name}
+  </p>
+)}
+        <label>
+          RESULTADO
+          <select
+            value={entrevista.resultado}
+            onChange={(e) =>
+              setEntrevista({
+                ...entrevista,
+                resultado: e.target.value,
+              })
+            }
+          >
+            <option value="Pendiente">Pendiente</option>
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+          </select>
+        </label>
+
+        <div className="pc-botones-oferta">
+          <button
+            type="button"
+            onClick={() => setEditandoEntrevista(false)}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="pc-boton-principal"
+            onClick={guardarEntrevista}
+          >
+            Guardar entrevista
+          </button>
+        </div>
+      </div>
+    ) : candidato.entrevista ? (
+      <div>
+        <p><strong>Fecha:</strong> {candidato.entrevista.fecha}</p>
+        <p><strong>Tipo:</strong> {candidato.entrevista.tipo}</p>
+        <p><strong>Observaciones:</strong> {candidato.entrevista.observaciones}</p>
+        <p><strong>Resultado:</strong> {candidato.entrevista.resultado}</p>
+
+
+
+
+
+{candidato.entrevista.documento && (
+  <div className="pc-documento-entrevista">
+    <p><strong>Documento de entrevista</strong></p>
+
+    <p>{candidato.entrevista.documento.name}</p>
+
+    <button
+      type="button"
+      onClick={() => {
+        const url = URL.createObjectURL(
+          candidato.entrevista.documento
+        );
+
+        window.open(url, "_blank", "noopener,noreferrer");
+      }}
+    >
+      Ver documento
+    </button>
+  </div>
+)}
+
+
+        <button
+          type="button"
+          className="pc-boton-principal"
+          onClick={() => setEditandoEntrevista(true)}
+        >
+          Modificar entrevista
+        </button>
+      </div>
+    ) : (
+      <div>
+        <p>Este candidato todavía no tiene una entrevista registrada.</p>
+
+        <button
+          type="button"
+
+          className="pc-boton-principal"
+          onClick={() => setEditandoEntrevista(true)}
+        >
+          + Registrar entrevista
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
+      {paso === 3 && (
+  <div className="pc-panel">
+    <h3>Evaluación del candidato</h3>
+
+    {editandoEvaluacion ? (
+      <div className="pc-formulario-oferta">
+        <label>
+          PUNTUACIÓN (1 A 10)
+          <input
+            type="number"
+            min="1"
+            max="10"
+            step="1"
+            value={evaluacion.puntuacion}
+            onChange={(e) =>
+              setEvaluacion({
+                ...evaluacion,
+                puntuacion: e.target.value,
+              })
+            }
+          />
+        </label>
+
+        <label>
+          CLASIFICACIÓN ADICIONAL
+          <select
+            value={evaluacion.clasificacion}
+            onChange={(e) =>
+              setEvaluacion({
+                ...evaluacion,
+                clasificacion: e.target.value,
+              })
+            }
+          >
+            <option value="Informativo">Informativo</option>
+            <option value="Bueno">Bueno</option>
+            <option value="Excelente">Excelente</option>
+            <option value="Requiere seguimiento">
+              Requiere seguimiento
+            </option>
+          </select>
+        </label>
+
+        <label>
+          OBSERVACIONES
+          <textarea
+            rows="4"
+            value={evaluacion.observaciones}
+            onChange={(e) =>
+              setEvaluacion({
+                ...evaluacion,
+                observaciones: e.target.value,
+              })
+            }
+            placeholder="Describe las competencias, experiencia y desempeño..."
+          />
+        </label>
+
+        <div className="pc-botones-oferta">
+          <button
+            type="button"
+            onClick={() => setEditandoEvaluacion(false)}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="pc-boton-principal"
+            onClick={guardarEvaluacion}
+          >
+            Guardar evaluación
+          </button>
+        </div>
+      </div>
+    ) : (
+      <>
+        <div className="pc-evaluacion">
+          <strong>
+            {candidato.evaluacion?.puntuacion ??
+              candidato.puntuacion ??
+              0}/10
+          </strong>
+
+          <div>
+            <b>Resultado registrado</b>
+            <p>Competencias, experiencia y ajuste al cargo.</p>
+          </div>
+        </div>
+
+        <div className="pc-detalles-evaluacion">
+          <p>
+            <strong>Clasificación:</strong>{" "}
+            {candidato.evaluacion?.clasificacion ?? "Informativo"}
+          </p>
+
+          <p>
+            <strong>Observaciones:</strong>{" "}
+            {candidato.evaluacion?.observaciones || "Sin observaciones"}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="pc-boton-principal"
+          onClick={() => setEditandoEvaluacion(true)}
+        >
+          Modificar evaluación
+        </button>
+      </>
+    )}
+  </div>
+)}
 
            
 {paso === 4 && (
@@ -407,6 +747,7 @@ const avanzarEtapa = () => {
     candidato.estado !== "Oferta" ||
     candidato.oferta?.estado !== "Aceptada"
   }
+  onClick={registrarContratacion}
 >
                   Registrar como empleado
                 </button>
@@ -420,6 +761,7 @@ const avanzarEtapa = () => {
               className="pc-boton-secundario"
               disabled={paso === 0}
               onClick={() => setPaso(paso - 1)}
+              
             >
               ← Anterior
             </button>

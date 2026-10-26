@@ -18,12 +18,7 @@ const vacantesIniciales = [
     nombre: "Mesero",
     descripcion: "Atención de mesa y experiencia al cliente.",
   },
-  {
-    id: 3,
-    area: "Domicilios",
-    nombre: "Domiciliario",
-    descripcion: "Entrega de pedidos y apoyo logístico.",
-  },
+
 ];
 
 const candidatosIniciales = [
@@ -35,14 +30,7 @@ const candidatosIniciales = [
     estado: "Entrevista",
     puntuacion: 8,
   },
-  {
-    id: 2,
-    nombre: "Andrés Castillo",
-    puesto: "Domiciliario",
-    fecha: "2026-07-30",
-    estado: "Revisión CV",
-    puntuacion: 7,
-  },
+
   {
     id: 3,
     nombre: "Marcela Fuentes",
