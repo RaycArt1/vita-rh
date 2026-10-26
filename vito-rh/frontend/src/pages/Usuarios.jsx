@@ -1,9 +1,8 @@
-
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import MainLayout from "../layouts/MainLayout";
 
-const ROLES = [
+const ROLES_FIJOS = [
   { value: "ADMINISTRADOR", label: "Administrador" },
   { value: "CHEF", label: "Chef de cocina" },
   { value: "EMPLEADO", label: "Empleado" },
@@ -13,8 +12,14 @@ const ROLES = [
 const formularioInicial = {
   username: "",
   password: "",
+  confirmPassword: "",
   rol: "EMPLEADO",
   empleadoId: "",
+};
+
+const formularioRolInicial = {
+  nombre: "",
+  descripcion: "",
 };
 
 function nombreCompleto(usuario) {
@@ -27,14 +32,25 @@ function nombreCompleto(usuario) {
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [empleados, setEmpleados] = useState([]);
+  const [rolesDinamicos, setRolesDinamicos] = useState(ROLES_FIJOS);
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [guardandoRol, setGuardandoRol] = useState(false);
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
+  
+  // Control de modales
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalRolAbierto, setModalRolAbierto] = useState(false);
+  
   const [editando, setEditando] = useState(null);
   const [formulario, setFormulario] = useState(formularioInicial);
+  const [formularioRol, setFormularioRol] = useState(formularioRolInicial);
+
+  // Estados para ver u ocultar las contraseñas
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
 
   async function cargarDatos() {
     setCargando(true);
@@ -48,6 +64,21 @@ export default function Usuarios() {
 
       setUsuarios(respuestaUsuarios.data);
       setEmpleados(respuestaEmpleados.data);
+
+      // Intentar cargar roles dinámicos si existe la ruta de roles en el backend
+      try {
+        const respuestaRoles = await api.get("/roles");
+        if (respuestaRoles.data && respuestaRoles.data.length > 0) {
+          const rolesMapeados = respuestaRoles.data.map(r => ({
+            value: r.nombre.toUpperCase(),
+            label: r.nombre
+          }));
+          setRolesDinamicos(rolesMapeados);
+        }
+      } catch (errRol) {
+        // Si no existe la ruta de roles aún, se mantienen los roles por defecto
+      }
+
     } catch (err) {
       setError(
         err.response?.data?.mensaje ||
@@ -81,9 +112,18 @@ export default function Usuarios() {
   function abrirCrear() {
     setEditando(null);
     setFormulario({ ...formularioInicial });
+    setMostrarPassword(false);
+    setMostrarConfirmPassword(false);
     setError("");
     setExito("");
     setModalAbierto(true);
+  }
+
+  function abrirCrearRol() {
+    setFormularioRol(formularioRolInicial);
+    setError("");
+    setExito("");
+    setModalRolAbierto(true);
   }
 
   function abrirEditar(usuario) {
@@ -91,17 +131,51 @@ export default function Usuarios() {
     setFormulario({
       username: usuario.username,
       password: "",
+      confirmPassword: "",
       rol: usuario.rol,
       empleadoId: String(usuario.empleadoId),
     });
+    setMostrarPassword(false);
+    setMostrarConfirmPassword(false);
     setError("");
     setExito("");
     setModalAbierto(true);
   }
 
+  // Manejo de cambios con autogeneración de username al seleccionar empleado
   function cambiarCampo(evento) {
     const { name, value } = evento.target;
+
+    if (name === "empleadoId") {
+      if (value) {
+        const empSel = empleados.find((e) => e.id === Number(value));
+        if (empSel) {
+          const primerNombre = empSel.nombres.trim().charAt(0).toLowerCase();
+          const primerApellido = empSel.apellidos.trim().split(" ")[0].toLowerCase();
+          const usernameGenerado = `${primerNombre}${primerApellido}`;
+
+          setFormulario((anterior) => ({
+            ...anterior,
+            empleadoId: value,
+            username: usernameGenerado,
+          }));
+          return;
+        }
+      }
+      setFormulario((anterior) => ({
+        ...anterior,
+        empleadoId: "",
+        username: "",
+      }));
+      return;
+    }
+
     setFormulario((anterior) => ({ ...anterior, [name]: value }));
+  }
+
+  function cambiarCampoRol(evento) {
+    const { name, value } = evento.target;
+    setFormularioRol((anterior) => ({ ...anterior, [name]: value }));
   }
 
   async function guardar(evento) {
@@ -119,6 +193,7 @@ export default function Usuarios() {
 
         if (formulario.password) {
           cambios.password = formulario.password;
+          cambios.confirmPassword = formulario.confirmPassword;
         }
 
         await api.put(`/usuarios/${editando.id}`, cambios);
@@ -140,6 +215,30 @@ export default function Usuarios() {
       );
     } finally {
       setGuardando(false);
+    }
+  }
+
+  async function guardarRol(evento) {
+    evento.preventDefault();
+    setGuardandoRol(true);
+    setError("");
+    setExito("");
+
+    try {
+      await api.post("/roles", {
+        nombre: formularioRol.nombre.trim(),
+        descripcion: formularioRol.descripcion.trim(),
+      });
+
+      setExito("Rol creado correctamente.");
+      setModalRolAbierto(false);
+      await cargarDatos();
+    } catch (err) {
+      setError(
+        err.response?.data?.mensaje || "No se pudo crear el rol. Verifica la ruta en el backend."
+      );
+    } finally {
+      setGuardandoRol(false);
     }
   }
 
@@ -171,7 +270,7 @@ export default function Usuarios() {
   }
 
   function etiquetaRol(rol) {
-    return ROLES.find((item) => item.value === rol)?.label || rol;
+    return rolesDinamicos.find((item) => item.value === rol)?.label || rol;
   }
 
   return (
@@ -185,10 +284,17 @@ export default function Usuarios() {
             </p>
           </div>
 
-          <button className="btn btn-primary" onClick={abrirCrear}>
-            <i className="bi bi-person-plus me-2" />
-            Nuevo usuario
-          </button>
+          {/* Botones de acción principales */}
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-primary" onClick={abrirCrearRol}>
+              <i className="bi bi-shield-plus me-2" />
+              Nuevo rol
+            </button>
+            <button className="btn btn-primary" onClick={abrirCrear}>
+              <i className="bi bi-person-plus me-2" />
+              Nuevo usuario
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -240,7 +346,7 @@ export default function Usuarios() {
                 </div>
                 <div>
                   <div className="text-secondary small">Roles disponibles</div>
-                  <div className="fs-3 fw-bold">{ROLES.length}</div>
+                  <div className="fs-3 fw-bold">{rolesDinamicos.length}</div>
                 </div>
               </div>
             </div>
@@ -381,6 +487,7 @@ export default function Usuarios() {
           </div>
         </div>
 
+        {/* MODAL CREAR / EDITAR USUARIO */}
         {modalAbierto && (
           <div
             className="modal d-block"
@@ -408,57 +515,6 @@ export default function Usuarios() {
                       <div className="alert alert-danger">{error}</div>
                     )}
 
-                    <div className="mb-3">
-                      <label className="form-label">Nombre de usuario</label>
-                      <input
-                        className="form-control"
-                        name="username"
-                        value={formulario.username}
-                        onChange={cambiarCampo}
-                        minLength={3}
-                        required
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Contraseña
-                        {editando && " (vacía para conservar la actual)"}
-                      </label>
-                      <input
-                        className="form-control"
-                        type="password"
-                        name="password"
-                        value={formulario.password}
-                        onChange={cambiarCampo}
-                        minLength={8}
-                        required={!editando}
-                        autoComplete="new-password"
-                      />
-                      {!editando && (
-                        <small className="text-secondary">
-                          Mínimo 8 caracteres.
-                        </small>
-                      )}
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">Rol</label>
-                      <select
-                        className="form-select"
-                        name="rol"
-                        value={formulario.rol}
-                        onChange={cambiarCampo}
-                        required
-                      >
-                        {ROLES.map((rol) => (
-                          <option key={rol.value} value={rol.value}>
-                            {rol.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
                     {!editando && (
                       <div className="mb-3">
                         <label className="form-label">Empleado asociado</label>
@@ -485,6 +541,93 @@ export default function Usuarios() {
                         )}
                       </div>
                     )}
+
+                    <div className="mb-3">
+                      <label className="form-label">Nombre de usuario</label>
+                      <input
+                        className="form-control"
+                        name="username"
+                        value={formulario.username}
+                        onChange={cambiarCampo}
+                        minLength={3}
+                        required
+                        placeholder="Se autogenera al elegir empleado"
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Contraseña
+                        {editando && " (vacía para conservar la actual)"}
+                      </label>
+                      <div className="input-group">
+                        <input
+                          className="form-control"
+                          type={mostrarPassword ? "text" : "password"}
+                          name="password"
+                          value={formulario.password}
+                          onChange={cambiarCampo}
+                          minLength={8}
+                          required={!editando}
+                          autoComplete="new-password"
+                          placeholder="Mínimo 8 caracteres y 1 carácter especial"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={() => setMostrarPassword(!mostrarPassword)}
+                          title={mostrarPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                        >
+                          <i className={`bi ${mostrarPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                        </button>
+                      </div>
+                      {!editando && (
+                        <small className="text-secondary d-block mt-1">
+                          Debe incluir al menos un símbolo especial (ej. @, $, !, %).
+                        </small>
+                      )}
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Confirmar contraseña</label>
+                      <div className="input-group">
+                        <input
+                          className="form-control"
+                          type={mostrarConfirmPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          value={formulario.confirmPassword}
+                          onChange={cambiarCampo}
+                          minLength={8}
+                          required={!editando || formulario.password !== ""}
+                          placeholder="Repite la contraseña"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={() => setMostrarConfirmPassword(!mostrarConfirmPassword)}
+                          title={mostrarConfirmPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                        >
+                          <i className={`bi ${mostrarConfirmPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Rol</label>
+                      <select
+                        className="form-select"
+                        name="rol"
+                        value={formulario.rol}
+                        onChange={cambiarCampo}
+                        required
+                      >
+                        {rolesDinamicos.map((rol) => (
+                          <option key={rol.value} value={rol.value}>
+                            {rol.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="modal-footer">
@@ -505,6 +648,81 @@ export default function Usuarios() {
                       }
                     >
                       {guardando ? "Guardando..." : "Guardar"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL CREAR NUEVO ROL */}
+        {modalRolAbierto && (
+          <div
+            className="modal d-block"
+            tabIndex="-1"
+            role="dialog"
+            style={{ backgroundColor: "rgba(0,0,0,.45)" }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content border-0 shadow">
+                <form onSubmit={guardarRol}>
+                  <div className="modal-header">
+                    <h5 className="modal-title">Crear nuevo rol</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      aria-label="Cerrar"
+                      onClick={() => setModalRolAbierto(false)}
+                    />
+                  </div>
+
+                  <div className="modal-body">
+                    {error && (
+                      <div className="alert alert-danger">{error}</div>
+                    )}
+
+                    <div className="mb-3">
+                      <label className="form-label">Nombre del rol</label>
+                      <input
+                        className="form-control"
+                        name="nombre"
+                        value={formularioRol.nombre}
+                        onChange={cambiarCampoRol}
+                        required
+                        placeholder="Ej. SUPERVISOR"
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Descripción</label>
+                      <textarea
+                        className="form-control"
+                        name="descripcion"
+                        value={formularioRol.descripcion}
+                        onChange={cambiarCampoRol}
+                        rows={3}
+                        placeholder="Breve descripción del rol..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light"
+                      onClick={() => setModalRolAbierto(false)}
+                      disabled={guardandoRol}
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={guardandoRol}
+                    >
+                      {guardandoRol ? "Guardando..." : "Guardar rol"}
                     </button>
                   </div>
                 </form>

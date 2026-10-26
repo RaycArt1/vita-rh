@@ -48,7 +48,6 @@ export async function obtenerEmpleados(req, res) {
   }
 }
 
-
 export async function obtenerAreas(req, res) {
   try {
     res.json(await empleadoService.obtenerAreas());
@@ -64,7 +63,6 @@ export async function obtenerPuestos(req, res) {
     errorServidor(res, error);
   }
 }
-
 
 export async function obtenerEmpleado(req, res) {
   try {
@@ -93,6 +91,7 @@ export async function crearEmpleado(req, res) {
 
     const puestoId = idValido(req.body.puestoId);
     const areaId = idValido(req.body.areaId);
+
     if (!puestoId || !areaId) {
       return res.status(400).json({ mensaje: "puestoId y areaId deben ser números enteros positivos" });
     }
@@ -112,11 +111,11 @@ export async function crearEmpleado(req, res) {
     }
 
     const empleado = await empleadoService.crearEmpleado({
-      nombres: req.body.nombres,
-      apellidos: req.body.apellidos,
-      identidad: req.body.identidad,
-      telefono: req.body.telefono,
-      correo: req.body.correo,
+      nombres: req.body.nombres.trim(),
+      apellidos: req.body.apellidos.trim(),
+      identidad: req.body.identidad.trim(),
+      telefono: req.body.telefono.trim(),
+      correo: req.body.correo.trim(),
       fechaIngreso,
       puestoId,
       areaId,
@@ -127,10 +126,9 @@ export async function crearEmpleado(req, res) {
   } catch (error) {
     if (error.code === "P2002") {
       const campo = error.meta?.target?.[0];
-      const mensaje =
-        campo === "correo"
-          ? "El correo ya está registrado"
-          : "La identidad ya está registrada";
+      let mensaje = "El registro ya existe";
+      if (campo === "correo") mensaje = "El correo ya está registrado";
+      else if (campo === "identidad") mensaje = "La identidad ya está registrada";
       return res.status(409).json({ mensaje });
     }
     errorServidor(res, error);
@@ -149,7 +147,6 @@ export async function actualizarEmpleado(req, res) {
       return res.status(404).json({ mensaje: "Empleado no encontrado" });
     }
 
-    // El estado solo se cambia con el endpoint de desactivar
     const { estado, id: _ignorado, ...cambios } = req.body;
 
     if (cambios.puestoId !== undefined) {
@@ -192,16 +189,45 @@ export async function desactivarEmpleado(req, res) {
 
     const existente = await empleadoService.obtenerEmpleadoPorId(id);
     if (!existente) {
-      return res.status(404).json({ mensaje: "Empleado no encontrado" });
+      return res.status(404).json({ mensaje: "La persona o empleado no se encuentra" });
     }
 
     const motivoBaja = String(req.body?.motivoBaja ?? "").trim();
-const empleado = await empleadoService.desactivarEmpleado(
-  id,
-  motivoBaja || null
-);
+    const empleado = await empleadoService.desactivarEmpleado(
+      id,
+      motivoBaja || null
+    );
     res.json(empleado);
   } catch (error) {
     errorServidor(res, error);
+  }
+}
+
+// Endpoint para crear puestos en caliente desde el formulario de empleados
+export async function crearPuestoDinamico(req, res) {
+  try {
+    const { nombre, areaId } = req.body;
+    
+    if (!nombre || !areaId) {
+      return res.status(400).json({ mensaje: "El nombre y el área son obligatorios" });
+    }
+
+    const areaIdNum = idValido(areaId);
+    if (!areaIdNum) {
+      return res.status(400).json({ mensaje: "El areaId debe ser un número entero positivo" });
+    }
+
+    const nuevoPuesto = await empleadoService.crearPuestoDinamico({
+      nombre: nombre.trim(),
+      areaId: areaIdNum
+    });
+
+    return res.status(201).json(nuevoPuesto);
+  } catch (error) {
+    if (error.code === "P2002") {
+      return res.status(409).json({ mensaje: "Ya existe un puesto con ese nombre en esta área" });
+    }
+    console.error(error);
+    return res.status(500).json({ mensaje: "Error interno al crear el puesto" });
   }
 }

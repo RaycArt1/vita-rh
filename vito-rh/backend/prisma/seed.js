@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Áreas y puestos iniciales de Vito RH.
-  // Se reutilizan los registros existentes para evitar duplicados.
   const estructura = [
     {
       nombre: "Administración",
@@ -98,21 +97,34 @@ async function main() {
     },
   });
 
-  // Crear el usuario administrador si todavía no existe.
+  // Crear o asegurar el rol ADMINISTRADOR en la tabla Role
+  const rolAdmin = await prisma.role.upsert({
+    where: { nombre: "ADMINISTRADOR" },
+    update: {},
+    create: {
+      nombre: "ADMINISTRADOR",
+      descripcion: "Administrador general del sistema",
+    },
+  });
+
+  // Crear el usuario administrador usando roleId de forma dinámica
   const password = await bcrypt.hash("admin123", 10);
 
   await prisma.usuario.upsert({
     where: { username: "admin" },
-    update: {},
+    update: {
+      password: password,
+      roleId: rolAdmin.id,
+    },
     create: {
       username: "admin",
       password,
-      rol: "ADMINISTRADOR",
+      roleId: rolAdmin.id,
       empleadoId: empleado.id,
     },
   });
 
-  console.log("✅ Áreas, puestos y usuario inicializados correctamente.");
+  console.log("✅ Áreas, puestos, roles y usuario inicializados correctamente.");
 }
 
 main()

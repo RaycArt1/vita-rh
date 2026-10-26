@@ -1,7 +1,9 @@
-
 import * as usuariosService from "./usuarios.service.js";
 
 const ROLES = ["ADMINISTRADOR", "CHEF", "EMPLEADO", "CLIENTE"];
+
+// Expresión regular para validar al menos un carácter especial
+const specialCharRegex = /[!@#$%^&*(),.?":{}|<>-]/;
 
 function idValido(valor) {
   const id = Number(valor);
@@ -43,6 +45,7 @@ export async function crear(req, res) {
   try {
     const username = String(req.body.username ?? "").trim();
     const password = String(req.body.password ?? "");
+    const confirmPassword = String(req.body.confirmPassword ?? "");
     const rol = String(req.body.rol ?? "");
     const empleadoId = idValido(req.body.empleadoId);
 
@@ -55,6 +58,20 @@ export async function crear(req, res) {
     if (password.length < 8) {
       return res.status(400).json({
         mensaje: "La contraseña debe tener al menos 8 caracteres.",
+      });
+    }
+
+    // Validación de carácter especial
+    if (!specialCharRegex.test(password)) {
+      return res.status(400).json({
+        mensaje: "La contraseña debe contener al menos un carácter especial (ej. @, $, !, %).",
+      });
+    }
+
+    // Validación de coincidencia de contraseñas
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        mensaje: "Las contraseñas no coinciden.",
       });
     }
 
@@ -114,12 +131,20 @@ export async function actualizar(req, res) {
     }
 
     if (req.body.password !== undefined && req.body.password !== "") {
-      if (String(req.body.password).length < 8) {
+      const password = String(req.body.password);
+      if (password.length < 8) {
         return res.status(400).json({
           mensaje: "La contraseña debe tener al menos 8 caracteres.",
         });
       }
-      cambios.password = String(req.body.password);
+
+      if (!specialCharRegex.test(password)) {
+        return res.status(400).json({
+          mensaje: "La contraseña debe contener al menos un carácter especial (ej. @, $, !, %).",
+        });
+      }
+
+      cambios.password = password;
     }
 
     if (req.body.activo !== undefined) {
