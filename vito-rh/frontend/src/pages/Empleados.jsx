@@ -256,6 +256,39 @@ export default function Empleados() {
     }
   }
 
+  // Función para volver a activar un empleado inactivo
+  async function cambiarEstado(empleado) {
+    const accion = empleado.estado === "ACTIVO" ? "desactivar" : "activar";
+
+    if (empleado.estado === "ACTIVO") {
+      setEmpleadoDesactivando(empleado);
+      setMotivoBaja("");
+      return;
+    }
+
+    if (!window.confirm(`¿Deseas activar a ${empleado.nombres} ${empleado.apellidos}?`)) {
+      return;
+    }
+
+    setError("");
+    setAviso("");
+
+    try {
+      await api.patch(`/empleados/${empleado.id}/activar`);
+      setAviso("Empleado activado correctamente.");
+      await cargarDatos();
+    } catch (err) {
+      console.error(err);
+      try {
+        await api.put(`/empleados/${empleado.id}`, { estado: "ACTIVO" });
+        setAviso("Empleado activado correctamente.");
+        await cargarDatos();
+      } catch (err2) {
+        setError(mensajeError(err2, "No se pudo activar el empleado."));
+      }
+    }
+  }
+
   const activos = empleados.filter((e) => e.estado === "ACTIVO").length;
 
   return (
@@ -411,23 +444,17 @@ export default function Empleados() {
                               size="sm"
                               variant="outline-primary"
                               onClick={() => abrirEdicion(empleado)}
-                              disabled={empleado.estado !== "ACTIVO"}
                             >
                               Editar
                             </Button>
 
-                            {empleado.estado === "ACTIVO" && (
-                              <Button
-                                size="sm"
-                                variant="outline-danger"
-                                onClick={() => {
-                                  setEmpleadoDesactivando(empleado);
-                                  setMotivoBaja("");
-                                }}
-                              >
-                                Desactivar
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant={empleado.estado === "ACTIVO" ? "outline-danger" : "outline-success"}
+                              onClick={() => cambiarEstado(empleado)}
+                            >
+                              {empleado.estado === "ACTIVO" ? "Desactivar" : "Activar"}
+                            </Button>
                           </div>
                         </td>
                       </tr>

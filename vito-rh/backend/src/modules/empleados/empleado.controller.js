@@ -147,7 +147,8 @@ export async function actualizarEmpleado(req, res) {
       return res.status(404).json({ mensaje: "Empleado no encontrado" });
     }
 
-    const { estado, id: _ignorado, ...cambios } = req.body;
+    // Se permite recibir 'estado' dentro de los cambios a actualizar
+    const { id: _ignorado, ...cambios } = req.body;
 
     if (cambios.puestoId !== undefined) {
       const puestoId = idValido(cambios.puestoId);
@@ -163,6 +164,12 @@ export async function actualizarEmpleado(req, res) {
         return res.status(400).json({ mensaje: "fechaIngreso no es válida o es futura" });
       }
       cambios.fechaIngreso = fechaIngreso;
+    }
+
+    if (cambios.estado !== undefined) {
+      if (cambios.estado !== "ACTIVO" && cambios.estado !== "INACTIVO") {
+        return res.status(400).json({ mensaje: "El estado debe ser ACTIVO o INACTIVO" });
+      }
     }
 
     const empleado = await empleadoService.actualizarEmpleado(id, cambios);
@@ -203,7 +210,6 @@ export async function desactivarEmpleado(req, res) {
   }
 }
 
-// Endpoint para crear puestos en caliente desde el formulario de empleados
 export async function crearPuestoDinamico(req, res) {
   try {
     const { nombre, areaId } = req.body;
