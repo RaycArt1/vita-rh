@@ -13,7 +13,7 @@ const formularioInicial = {
   username: "",
   password: "",
   confirmPassword: "",
-  rol: "EMPLEADO",
+  rol: "ADMINISTRADOR", // Cambiado para evitar conflictos iniciales
   empleadoId: "",
 };
 
@@ -65,18 +65,19 @@ export default function Usuarios() {
       setUsuarios(respuestaUsuarios.data);
       setEmpleados(respuestaEmpleados.data);
 
-      // Intentar cargar roles dinámicos si existe la ruta de roles en el backend
+      // Cargar roles dinámicos de la base de datos
       try {
         const respuestaRoles = await api.get("/roles");
         if (respuestaRoles.data && respuestaRoles.data.length > 0) {
           const rolesMapeados = respuestaRoles.data.map(r => ({
             value: r.nombre.toUpperCase(),
-            label: r.nombre
+            label: r.nombre,
+            id: r.id // Guardamos el ID por si el backend lo requiere
           }));
           setRolesDinamicos(rolesMapeados);
         }
       } catch (errRol) {
-        // Si no existe la ruta de roles aún, se mantienen los roles por defecto
+        console.error("No se pudieron cargar los roles dinámicos", errRol);
       }
 
     } catch (err) {
@@ -111,7 +112,9 @@ export default function Usuarios() {
 
   function abrirCrear() {
     setEditando(null);
-    setFormulario({ ...formularioInicial });
+    // Asignar por defecto el primer rol disponible si existe
+    const rolPorDefecto = rolesDinamicos.length > 0 ? rolesDinamicos[0].value : "ADMINISTRADOR";
+    setFormulario({ ...formularioInicial, rol: rolPorDefecto });
     setMostrarPassword(false);
     setMostrarConfirmPassword(false);
     setError("");
@@ -185,10 +188,23 @@ export default function Usuarios() {
     setExito("");
 
     try {
+      // Buscamos si el rol seleccionado tiene un ID asociado en los roles dinámicos cargados
+      const rolSeleccionadoObj = rolesDinamicos.find(r => r.value === formulario.rol);
+      
+      const payload = {
+        username: formulario.username.trim(),
+        password: formulario.password,
+        confirmPassword: formulario.confirmPassword,
+        rol: formulario.rol,
+        roleId: rolSeleccionadoObj?.id ? Number(rolSeleccionadoObj.id) : undefined,
+        empleadoId: Number(formulario.empleadoId),
+      };
+
       if (editando) {
         const cambios = {
           username: formulario.username.trim(),
           rol: formulario.rol,
+          roleId: rolSeleccionadoObj?.id ? Number(rolSeleccionadoObj.id) : undefined,
         };
 
         if (formulario.password) {
@@ -199,11 +215,7 @@ export default function Usuarios() {
         await api.put(`/usuarios/${editando.id}`, cambios);
         setExito("Usuario actualizado correctamente.");
       } else {
-        await api.post("/usuarios", {
-          ...formulario,
-          username: formulario.username.trim(),
-          empleadoId: Number(formulario.empleadoId),
-        });
+        await api.post("/usuarios", payload);
         setExito("Usuario creado correctamente.");
       }
 
@@ -211,7 +223,7 @@ export default function Usuarios() {
       await cargarDatos();
     } catch (err) {
       setError(
-        err.response?.data?.mensaje || "No se pudo guardar el usuario."
+        err.response?.data?.mensaje || err.response?.data?.error || "No se pudo guardar el usuario."
       );
     } finally {
       setGuardando(false);

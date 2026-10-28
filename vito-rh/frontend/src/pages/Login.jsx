@@ -64,13 +64,12 @@ export default function Login() {
 
       const rol = resultado.usuario.rol;
 
-  if (rol === "CHEF") {
-  navigate("/chef/dashboard", { replace: true });
-  } else {
-  navigate("/dashboard", { replace: true });
-  }
+      if (rol === "CHEF") {
+        navigate("/chef/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
-
       const mensaje =
         err.response?.data?.mensaje ||
         err.message ||
@@ -90,7 +89,11 @@ export default function Login() {
     <main className="login-page">
       <section className="login-brand-panel">
         <header className="login-brand">
-          <div className="login-brand-logo">VH</div>
+          <img
+            src="/vita.jpeg"
+            alt="Logo Vito Pizzería"
+            style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }}
+          />
 
           <div>
             <strong>GestRH</strong>
@@ -99,12 +102,12 @@ export default function Login() {
         </header>
 
         <div className="login-brand-message">
-          <span className="login-eyebrow">Gestión de personas</span>
+          
 
           <h1>
-            El equipo detrás de
+            "Mas que comida,
             <br />
-            cada gran pizza.
+            es alta cocina"
           </h1>
 
           <p>
@@ -120,7 +123,13 @@ export default function Login() {
 
       <section className="login-form-panel">
         <div className="login-card">
-          <div className="login-card-logo">VH</div>
+          <div className="text-center mb-3">
+            <img
+              src="/vita.jpeg"
+              alt="Logo Vito Pizzería"
+              style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8 }}
+            />
+          </div>
 
           <h2>Bienvenido</h2>
           <p className="login-subtitle">
@@ -192,7 +201,7 @@ export default function Login() {
           </form>
 
           <p className="login-demo-note">
-          <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+            <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
           </p>
 
           <div className="login-demo">

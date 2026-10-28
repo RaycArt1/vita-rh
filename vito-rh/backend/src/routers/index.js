@@ -4,6 +4,7 @@ import empleadoRoutes from "../modules/empleados/empleado.routes.js";
 import horariosRoutes from "../modules/horarios/horario.routes.js"; // <--- Con la "s"
 import usuariosRoutes from "../modules/usuarios/usuarios.routes.js";
 import rolesRoutes from "../modules/roles/roles.routes.js";
+import mantenimientoRoutes from "../mantenimiento/mantenimiento.routes.js"; // <--- Nueva importación
 
 const router = Router();
 
@@ -12,6 +13,7 @@ router.use("/auth", authRoutes);
 router.use("/empleados", empleadoRoutes);
 router.use("/usuarios", usuariosRoutes);
 router.use("/roles", rolesRoutes);
+router.use("/mantenimiento", mantenimientoRoutes); // <--- Nueva ruta agregada
 
 router.get("/", (req, res) => {
     res.json({

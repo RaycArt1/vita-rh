@@ -1,9 +1,11 @@
 import * as usuariosService from "./usuarios.service.js";
+import prisma from "../../config/prisma.js"; // Asegúrate de importar prisma si validas dinámicamente
 
-const ROLES = ["ADMINISTRADOR", "CHEF", "EMPLEADO", "CLIENTE"];
+// Lista estricta actualizada con los roles que ya utilizas
+const ROLES = ["ADMINISTRADOR", "CHEF", "EMPLEADO", "CLIENTE", "COCINERO"];
 
 // Expresión regular para validar al menos un carácter especial
-const specialCharRegex = /[!@#$%^&*(),.?":{}|<>-]/;
+const specialCharRegex = /[.\-!@#$%^&*(),?":{}|<>/]/;
 
 function idValido(valor) {
   const id = Number(valor);
@@ -46,7 +48,7 @@ export async function crear(req, res) {
     const username = String(req.body.username ?? "").trim();
     const password = String(req.body.password ?? "");
     const confirmPassword = String(req.body.confirmPassword ?? "");
-    const rol = String(req.body.rol ?? "");
+    const rol = String(req.body.rol ?? "").toUpperCase(); // Normalizamos a mayúsculas
     const empleadoId = idValido(req.body.empleadoId);
 
     if (!username || username.length < 3) {
@@ -75,7 +77,12 @@ export async function crear(req, res) {
       });
     }
 
-    if (!ROLES.includes(rol)) {
+    // Validación unificada: Validar contra el array local O directamente en la BD
+    const rolExisteEnBD = await prisma.role.findFirst({
+      where: { nombre: rol }
+    });
+
+    if (!ROLES.includes(rol) && !rolExisteEnBD) {
       return res.status(400).json({ mensaje: "Rol no válido." });
     }
 
@@ -124,10 +131,15 @@ export async function actualizar(req, res) {
     }
 
     if (req.body.rol !== undefined) {
-      if (!ROLES.includes(req.body.rol)) {
+      const rolActualizar = String(req.body.rol).toUpperCase();
+      const rolExisteEnBD = await prisma.role.findFirst({
+        where: { nombre: rolActualizar }
+      });
+
+      if (!ROLES.includes(rolActualizar) && !rolExisteEnBD) {
         return res.status(400).json({ mensaje: "Rol no válido." });
       }
-      cambios.rol = req.body.rol;
+      cambios.rol = rolActualizar;
     }
 
     if (req.body.password !== undefined && req.body.password !== "") {
