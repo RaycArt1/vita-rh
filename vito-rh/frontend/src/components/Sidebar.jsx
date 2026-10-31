@@ -21,7 +21,7 @@ const menu = [
   { nombre: "Usuarios y Roles", ruta: "/usuarios", icono: <FaUserShield />, detalle: "Accesos y permisos" },
   { nombre: "Calendarios", ruta: "/horarios", icono: <FaCalendarAlt />, detalle: "Turnos y periodos" },
   { nombre: "Reportes", ruta: "/reportes", icono: <FaFileAlt />, detalle: "Incidencias y nóminas" },
-  { nombre: "Vacaciones", ruta: "/vacaciones", icono: <FaUmbrellaBeach />, detalle: "Permisos y ausencias" },
+  { nombre: "Solicitudes", ruta: "/solicitudes", icono: <FaUmbrellaBeach />, detalle: "Vacaciones y permisos" },
   { nombre: "Reclutamiento", ruta: "/reclutamiento", icono: <FaUserTie />, detalle: "Selección de personal" },
   { nombre: "Planillas", ruta: "/planillas", icono: <FaMoneyBillWave />, detalle: "Pagos y deducciones" },
   { nombre: "Historial", ruta: "/historial", icono: <FaHistory />, detalle: "Registro de actividad" },
