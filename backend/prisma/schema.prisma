@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./vito.db"
+}
+
+
+enum EstadoEmpleado {
+  ACTIVO
+  INACTIVO
+}
+
+enum EstadoVacacion {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+}
+
+model Area {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  puestos   Puesto[]
+}
+
+model Puesto {
+  id         Int        @id @default(autoincrement())
+  nombre     String
+  areaId     Int
+  area        Area      @relation(fields: [areaId], references: [id])
+  empleados  Empleado[]
+}
+
+model Empleado {
+  id               Int                  @id @default(autoincrement())
+  nombres          String
+  apellidos        String
+  identidad        String               @unique
+  telefono         String
+  correo           String               @unique
+  fechaIngreso     DateTime
+  estado           EstadoEmpleado       @default(ACTIVO)
+
+  puestoId         Int
+  puesto           Puesto               @relation(fields: [puestoId], references: [id])
+
+  usuario          Usuario?
+  expediente       Expediente?
+  horarios         Horario[]
+  vacaciones       Vacacion[]
+  llamados         LlamadoAtencion[]
+}
+
+model Usuario {
+  id          Int        @id @default(autoincrement())
+  username    String     @unique
+  password    String
+  rol         String
+
+  empleadoId  Int        @unique
+  empleado    Empleado   @relation(fields: [empleadoId], references: [id])
+}
+
+model Turno {
+  id           Int        @id @default(autoincrement())
+  nombre       String
+  horaInicio   String
+  horaFin      String
+
+  horarios     Horario[]
+}
+
+model Horario {
+  id           Int        @id @default(autoincrement())
+  fecha        DateTime
+
+  empleadoId   Int
+  empleado     Empleado   @relation(fields: [empleadoId], references: [id])
+
+  turnoId      Int
+  turno         Turno      @relation(fields: [turnoId], references: [id])
+}
+
+model Vacacion {
+  id            Int              @id @default(autoincrement())
+  fechaInicio   DateTime
+  fechaFin      DateTime
+  motivo        String?
+  estado        EstadoVacacion   @default(PENDIENTE)
+
+  empleadoId    Int
+  empleado      Empleado         @relation(fields: [empleadoId], references: [id])
+}
+
+model LlamadoAtencion {
+  id            Int        @id @default(autoincrement())
+  fecha         DateTime
+  motivo        String
+  observaciones String?
+
+  empleadoId    Int
+  empleado      Empleado   @relation(fields: [empleadoId], references: [id])
+}
+
+model Expediente {
+  id                  Int        @id @default(autoincrement())
+
+  contrato            String?
+  identidadArchivo    String?
+  confidencialidad    String?
+  hojaVida            String?
+  observaciones       String?
+
+  empleadoId          Int        @unique
+  empleado            Empleado   @relation(fields: [empleadoId], references: [id])
+}

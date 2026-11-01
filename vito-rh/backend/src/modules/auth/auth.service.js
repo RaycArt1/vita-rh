@@ -5,9 +5,16 @@ import crypto from "crypto";
 import { enviarCorreoRecuperacion } from "../../services/correo.service.js";
 
 export async function login(username, password) {
+  // Limpiamos espacios en blanco accidentales
+  const cleanUsername = String(username ?? "").trim();
+  const cleanPassword = String(password ?? "").trim();
+
+  console.log("-> Datos recibidos en el servicio login - username:", cleanUsername);
+
   const usuario = await prisma.usuario.findUnique({
-    where: { username },
-    include: {
+    where: { username: cleanUsername },
+    include: { 
+      role: true,
       empleado: {
         include: {
           puesto: {
@@ -20,11 +27,14 @@ export async function login(username, password) {
     },
   });
 
+  console.log("-> Resultado de la búsqueda en Prisma:", usuario ? "Usuario encontrado" : "No encontrado");
+
   if (!usuario) {
     throw new Error("Usuario o contraseña incorrectos");
   }
 
-  const coincide = await bcrypt.compare(password, usuario.password);
+  const coincide = await bcrypt.compare(cleanPassword, usuario.password);
+  console.log("-> ¿La contraseña coincide con bcrypt?:", coincide);
 
   if (!coincide) {
     throw new Error("Usuario o contraseña incorrectos");
@@ -34,7 +44,7 @@ export async function login(username, password) {
     {
       id: usuario.id,
       username: usuario.username,
-      rol: usuario.rol,
+      rol: usuario.role?.nombre || "ADMINISTRADOR", // Usamos el nombre del rol relacionado
     },
     process.env.JWT_SECRET,
     {
@@ -47,20 +57,18 @@ export async function login(username, password) {
     usuario: {
       id: usuario.id,
       username: usuario.username,
-      rol: usuario.rol,
+      rol: usuario.role?.nombre || "ADMINISTRADOR", // Retornamos el rol correcto
       empleado: usuario.empleado,
     },
   };
-
 }
 
-  export async function solicitarRecuperacion(correo) {
+export async function solicitarRecuperacion(correo) {
   const empleado = await prisma.empleado.findUnique({
     where: { correo },
     include: { usuario: true },
   });
 
-  // Si no hay usuario asociado, no se envía nada, pero la respuesta es la misma
   if (!empleado?.usuario) return;
 
   const token = crypto.randomBytes(32).toString("hex");
@@ -75,7 +83,6 @@ export async function login(username, password) {
   const enlace = `${process.env.FRONTEND_URL}/restablecer/${token}`;
   await enviarCorreoRecuperacion(empleado.correo, enlace);
 }
-
 
 export async function restablecerContrasena(token, nuevaPassword) {
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");

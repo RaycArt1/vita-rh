@@ -12,7 +12,7 @@ import {
   FaFileAlt,
   FaUserTie,
   FaMoneyBillWave,
-  FaSignOutAlt,
+  FaWrench, // <-- ¡Aquí estaba el truco! Ya lo agregamos
 } from "react-icons/fa";
 
 const menu = [
@@ -25,19 +25,18 @@ const menu = [
   { nombre: "Reclutamiento", ruta: "/reclutamiento", icono: <FaUserTie />, detalle: "Selección de personal" },
   { nombre: "Planillas", ruta: "/planillas", icono: <FaMoneyBillWave />, detalle: "Pagos y deducciones" },
   { nombre: "Historial", ruta: "/historial", icono: <FaHistory />, detalle: "Registro de actividad" },
+  { nombre: "Mantenimiento", ruta: "/mantenimiento", icono: <FaWrench />, detalle: "Gestión y soporte" },
 ];
 
 export default function Sidebar() {
-  function cerrarSesion() {
-    sessionStorage.removeItem("gestRH_token");
-    sessionStorage.removeItem("gestRH_usuario");
-    window.location.assign("/login");
-  }
-
   return (
     <aside className="app-sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-logo">VH</div>
+        <img
+          src="/vita.jpeg"
+          alt="Logo Vito Pizzería"
+          style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }}
+        />
         <div className="sidebar-brand-text">
           <strong>GestRH</strong>
           <span>Vito Pizzería</span>
@@ -63,33 +62,6 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
-
-      <div className="sidebar-bottom">
-        <div className="sidebar-profile">
-          <div className="sidebar-avatar">AV</div>
-          <div className="sidebar-profile-copy">
-            <strong>Administrador Vito</strong>
-            <span>Administrador</span>
-          </div>
-          <button
-            type="button"
-            className="sidebar-logout-icon"
-            onClick={cerrarSesion}
-            title="Cerrar sesión"
-            aria-label="Cerrar sesión"
-          >
-            <FaSignOutAlt />
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="sidebar-logout-text"
-          onClick={cerrarSesion}
-        >
-          Cerrar sesión
-        </button>
-      </div>
     </aside>
   );
 }

@@ -16,12 +16,12 @@ enum EstadoEmpleado {
 }
 
 // Roles del sistema (documento: gerente, chef, empleado)
-enum RolUsuario {
-  ADMINISTRADOR
-  CHEF
-  EMPLEADO
-  CLIENTE
-}
+//enum RolUsuario {
+  //ADMINISTRADOR
+  //CHEF
+  //EMPLEADO
+  //CLIENTE
+//}
 
 // Tipos de ausencia
 enum TipoSolicitud {
@@ -75,6 +75,13 @@ enum ResultadoEntrevista {
 
 // ===================== CATÁLOGOS =====================
 
+model Role {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  descripcion String?
+  usuarios    Usuario[]
+}
+
 model Area {
   id          Int        @id @default(autoincrement())
   nombre      String     @unique
@@ -127,17 +134,18 @@ model Empleado {
 }
 
 model Usuario {
-  id           Int         @id @default(autoincrement())
-  username     String      @unique
-  password     String      // hash (bcrypt). 
-  rol          RolUsuario
-  activo       Boolean     @default(true)
-  ultimoAcceso DateTime?
-  tokenRecuperacion  String?    // hash del token de recuperación (nunca el token en texto plano)
-  tokenExpira        DateTime?  // fecha y hora en que el enlace deja de servir
-  empleadoId   Int         @unique
+  id                Int          @id @default(autoincrement())
+  username          String       @unique
+  password          String       // hash (bcrypt). 
+  roleId            Int          // <-- NUEVO: Relación con la tabla Role
+  activo            Boolean      @default(true)
+  ultimoAcceso      DateTime?
+  tokenRecuperacion String?    
+  tokenExpira       DateTime?  
+  empleadoId        Int          @unique
 
-  empleado            Empleado          @relation(fields: [empleadoId], references: [id])
+  role              Role         @relation(fields: [roleId], references: [id]) // <-- NUEVO
+  empleado          Empleado     @relation(fields: [empleadoId], references: [id])
   expedientesCargados Expediente[]
   solicitudesAprobadas Solicitud[]
   horariosCreados     Horario[]
