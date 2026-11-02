@@ -1,8 +1,13 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Reclutamiento.css";
 import FormularioCandidato from "../components/FormularioCandidato";
 import PerfilCandidato from "../components/PerfilCandidato";
+import {
+  crearCandidato,
+  obtenerCandidatos,
+  actualizarEstadoCandidato,
+} from "../services/reclutamientoService";
+
 
 
 const vacantesIniciales = [
@@ -68,27 +73,143 @@ const etapas = [
 
 export default function Reclutamiento() {
 const [vacantes, setVacantes] = useState(vacantesIniciales);
-const [candidatos, setCandidatos] = useState(candidatosIniciales);
+const [candidatos, setCandidatos] = useState([]);
+useEffect(() => {
+  console.log(
+    "CANDIDATOS ACTUALIZADOS:",
+    candidatos.map((c) => ({
+      nombre: c.nombre,
+      estado: c.estado,
+    }))
+  );
+}, [candidatos]);
+const contarCandidatos = (etapa) => {
+  return candidatos.filter(
+    (candidato) => candidato.estado === etapa
+  ).length;
+};
 const [mostrarFormularioCandidato, setMostrarFormularioCandidato] = useState(false);
+
+useEffect(() => {
+  const cargarCandidatos = async () => {
+    try {
+      const candidatosGuardados = await obtenerCandidatos();
+const nombresEtapas = {
+  APLICACION: "Aplicación",
+  REVISION_CV: "Revisión CV",
+  ENTREVISTA: "Entrevista",
+  EVALUACION: "Evaluación",
+  OFERTA: "Oferta",
+  CONTRATADO: "Contratado",
+};
+      const candidatosAdaptados = candidatosGuardados.map((candidato) => ({
+        ...candidato,
+        nombre: `${candidato.nombre} ${candidato.apellido}`.trim(),
+        correo: candidato.email || "",
+        puesto: candidato.puestoAplicado,
+        cvArchivo: candidato.cvArchivo,
+        fecha: candidato.fechaRegistro?.slice(0, 10) || "",
+       estado: candidato.estado === "DESCARTADO"
+  ? "Rechazado"
+  : nombresEtapas[candidato.etapa] || "Aplicación",
+        puntuacion: 0,
+        entrevista: candidato.entrevistas?.length
+  ? {
+      fecha: candidato.entrevistas[0].fecha?.slice(0, 10) || "",
+      tipo: "Presencial",
+      observaciones: candidato.entrevistas[0].observaciones || "",
+      resultado:
+        candidato.entrevistas[0].resultado === "APROBADO"
+          ? "Aprobado"
+          : candidato.entrevistas[0].resultado === "RECHAZADO"
+          ? "Rechazado"
+          : "Pendiente",
+      documento: null,
+    }
+  : null,
+      }));
+
+      setCandidatos(candidatosAdaptados);
+    } catch (error) {
+      console.error("Error al cargar candidatos:", error);
+    }
+  };
+
+  cargarCandidatos();
+}, []);
+
 const [candidatoSeleccionado, setCandidatoSeleccionado] = useState(null);
 
-const guardarCandidato = (nuevoCandidato) => {
-  setCandidatos((anteriores) => [...anteriores, nuevoCandidato]);
-  setMostrarFormularioCandidato(false);
+const guardarCandidato = async (nuevoCandidato) => {
+  try {
+    const datosBackend = {
+      nombre: nuevoCandidato.nombre,
+      apellido: nuevoCandidato.apellido,
+      email: nuevoCandidato.correo,
+      telefono: nuevoCandidato.telefono,
+      puestoAplicado: nuevoCandidato.puesto,
+      cv: nuevoCandidato.cv,
+    };
+
+    const candidatoGuardado = await crearCandidato(datosBackend);
+
+    setCandidatos((anteriores) => [
+      ...anteriores,
+      { ...nuevoCandidato, id: candidatoGuardado.id },
+    ]);
+
+    setMostrarFormularioCandidato(false);
+  } catch (error) {
+    console.error("Error al guardar candidato:", error);
+    alert("No se pudo guardar el candidato. Revisa la conexión con el backend.");
+  }
 };
 
-const actualizarCandidato = (candidatoActualizado) => {
-  setCandidatos((anteriores) =>
-    anteriores.map((candidato) =>
-      candidato.id === candidatoActualizado.id
-        ? candidatoActualizado
-        : candidato
-    )
-  );
+const actualizarCandidato = async (candidatoActualizado) => {
 
-  setCandidatoSeleccionado(candidatoActualizado);
+const etapasBackend = {
+  "Aplicación": "APLICACION",
+  "Revisión CV": "REVISION_CV",
+  "Entrevista": "ENTREVISTA",
+  "Evaluación": "EVALUACION",
+  "Oferta": "OFERTA",
+  "Contratado": "CONTRATADO",
 };
 
+
+  try {
+
+const etapaBackend = etapasBackend[candidatoActualizado.estado];
+
+const cambios = candidatoActualizado.estado === "Rechazado"
+  ? { estado: "DESCARTADO" }
+  : {
+      estado: candidatoActualizado.estado === "Contratado"
+        ? "CONTRATADO"
+        : "EN_PROCESO",
+      etapa: etapaBackend,
+    };
+
+await actualizarEstadoCandidato(
+  candidatoActualizado.id,
+  cambios
+);
+
+
+    setCandidatos((anteriores) =>
+      anteriores.map((candidato) =>
+        candidato.id === candidatoActualizado.id
+          ? candidatoActualizado
+          : candidato
+      )
+    );
+
+    setCandidatoSeleccionado(candidatoActualizado);
+  } catch (error) {
+    console.error("Error al actualizar candidato:", error);
+    alert("No se pudo actualizar el candidato.");
+  }
+};
 const [mostrarFormularioVacante, setMostrarFormularioVacante] = useState(false);
 
 const [nuevaVacante, setNuevaVacante] = useState({
@@ -179,15 +300,10 @@ const guardarVacante = (evento) => {
         <h2>PIPELINE DE SELECCIÓN</h2>
 
         <div className="reclutamiento-etapas">
+
           {etapas.map((etapa) => (
             <div className="reclutamiento-etapa" key={etapa}>
-              <strong>
-                {
-                  candidatos.filter(
-                    (candidato) => candidato.estado === etapa
-                  ).length
-                }
-              </strong>
+<strong>{contarCandidatos(etapa)}</strong>
               <span>{etapa}</span>
             </div>
           ))}
@@ -243,7 +359,7 @@ const guardarVacante = (evento) => {
           </article>
         ))}
       </section>
-      
+
 {mostrarFormularioVacante && (
   <div
     className="reclutamiento-modal-fondo"

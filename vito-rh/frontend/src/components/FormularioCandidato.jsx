@@ -4,6 +4,7 @@ import "./FormularioCandidato.css";
 
 const datosIniciales = {
   nombre: "",
+  apellido: "",
   correo: "",
   fecha: new Date().toISOString().slice(0, 10),
   puesto: "",
@@ -33,7 +34,7 @@ export default function FormularioCandidato({
     evento.preventDefault();
 
     if (paso === 1) {
-      if (!datos.nombre.trim() || !datos.correo.trim() || !datos.puesto) {
+    if (!datos.nombre.trim() || !datos.apellido.trim() || !datos.correo.trim() || !datos.puesto) {
         setError("Completa los campos obligatorios.");
         return;
       }
@@ -64,6 +65,7 @@ export default function FormularioCandidato({
     onGuardar({
       id: Date.now(),
       nombre: datos.nombre.trim(),
+      apellido: datos.apellido.trim(),
       correo: datos.correo.trim(),
       fecha: datos.fecha,
       puesto: datos.puesto,
@@ -115,17 +117,26 @@ export default function FormularioCandidato({
 
         <form onSubmit={paso === 3 ? guardar : siguiente}>
           {paso === 1 && (
-            <div className="fc-campos">
-              <label>
-                Nombre completo *
-                <input
-                  value={datos.nombre}
-                  onChange={(e) => actualizar("nombre", e.target.value)}
-                  placeholder="Nombre y apellido"
-                  required
-                />
-              </label>
+           <div className="fc-campos">
+  <label>
+    Nombre *
+    <input
+      value={datos.nombre}
+      onChange={(e) => actualizar("nombre", e.target.value)}
+      placeholder="Nombre"
+      required
+    />
+  </label>
 
+  <label>
+    Apellido *
+    <input
+      value={datos.apellido}
+      onChange={(e) => actualizar("apellido", e.target.value)}
+      placeholder="Apellido"
+      required
+    />
+  </label>
               <label>
                 Correo electrónico *
                 <input
