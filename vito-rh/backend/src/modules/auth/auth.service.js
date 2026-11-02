@@ -44,7 +44,7 @@ export async function login(username, password) {
     {
       id: usuario.id,
       username: usuario.username,
-      rol: usuario.role?.nombre || "ADMINISTRADOR", // Usamos el nombre del rol relacionado
+      rol: usuario.role?.nombre || "ADMINISTRADOR",
     },
     process.env.JWT_SECRET,
     {
@@ -57,19 +57,34 @@ export async function login(username, password) {
     usuario: {
       id: usuario.id,
       username: usuario.username,
-      rol: usuario.role?.nombre || "ADMINISTRADOR", // Retornamos el rol correcto
+      rol: usuario.role?.nombre || "ADMINISTRADOR",
       empleado: usuario.empleado,
     },
   };
 }
 
 export async function solicitarRecuperacion(correo) {
-  const empleado = await prisma.empleado.findUnique({
-    where: { correo },
+  const cleanCorreo = String(correo ?? "").trim().toLowerCase();
+
+  // Buscamos el empleado por su correo ignorando mayúsculas/minúsculas
+  const empleado = await prisma.empleado.findFirst({
+    where: {
+      correo: {
+        equals: cleanCorreo,
+      },
+    },
     include: { usuario: true },
   });
 
-  if (!empleado?.usuario) return;
+  if (!empleado) {
+    console.log(`⚠️ No se encontró ningún empleado registrado con el correo: ${cleanCorreo}`);
+    return;
+  }
+
+  if (!empleado.usuario) {
+    console.log(`⚠️ El empleado con correo ${cleanCorreo} no tiene una cuenta de usuario asignada.`);
+    return;
+  }
 
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -77,10 +92,16 @@ export async function solicitarRecuperacion(correo) {
 
   await prisma.usuario.update({
     where: { id: empleado.usuario.id },
-    data: { tokenRecuperacion: tokenHash, tokenExpira },
+    data: { 
+      tokenRecuperacion: tokenHash, 
+      tokenExpira 
+    },
   });
 
-  const enlace = `${process.env.FRONTEND_URL}/restablecer/${token}`;
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const enlace = `${frontendUrl}/restablecer/${token}`;
+
+  console.log(`🚀 Generando enlace de recuperación para ${empleado.correo}...`);
   await enviarCorreoRecuperacion(empleado.correo, enlace);
 }
 

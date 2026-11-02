@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 const api = axios.create({
@@ -17,5 +18,27 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+
+
+export const fetchReportes = async () => {
+  try {
+    const response = await api.get("/reportes");
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener los reportes:", error);
+    return [];
+  }
+};
+
+export const guardarReporte = async (reporteData) => {
+  try {
+    const response = await api.post("/reportes", reporteData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al guardar el reporte:", error);
+    throw error;
+  }
+};
 
 export default api;
