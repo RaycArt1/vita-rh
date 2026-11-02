@@ -155,7 +155,7 @@ model Usuario {
   entrevistas          Entrevista[]
   notificaciones       Notificacion[]
   bitacora             Bitacora[]
-  
+  descansosCreados     Descanso[]
 }
 
 // ===================== EXPEDIENTE =====================
@@ -316,10 +316,8 @@ model Bitacora {
   ipOrigen      String?
   usuarioId     Int
 
-<<<<<<< HEAD
   usuario       Usuario        @relation(fields: [usuarioId], references: [id])
-=======
-  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+  
 }
 
 // ===================== DESCANSOS =====================
@@ -335,5 +333,4 @@ model Descanso {
   creadoPor     Usuario  @relation(fields: [creadoPorId], references: [id])
 
   @@unique([empleadoId, fecha])
->>>>>>> origin/main
 }
