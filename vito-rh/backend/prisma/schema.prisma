@@ -83,8 +83,8 @@ model Role {
 }
 
 model Area {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
   descripcion String?
 
   puestos     Puesto[]
@@ -93,11 +93,11 @@ model Area {
 }
 
 model Puesto {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   nombre    String
   areaId    Int
 
-  area      Area       @relation(fields: [areaId], references: [id])
+  area      Area     @relation(fields: [areaId], references: [id])
   empleados Empleado[]
 }
 
@@ -134,26 +134,26 @@ model Empleado {
 }
 
 model Usuario {
-  id                Int          @id @default(autoincrement())
-  username          String       @unique
-  password          String       // hash (bcrypt). 
-  roleId            Int          // <-- NUEVO: Relación con la tabla Role
-  activo            Boolean      @default(true)
-  ultimoAcceso      DateTime?
-  tokenRecuperacion String?    
-  tokenExpira       DateTime?  
-  empleadoId        Int          @unique
+  id                 Int                @id @default(autoincrement())
+  username           String             @unique
+  password           String             // hash (bcrypt). 
+  roleId             Int                // <-- NUEVO: Relación con la tabla Role
+  activo             Boolean            @default(true)
+  ultimoAcceso       DateTime?
+  tokenRecuperacion  String?    
+  tokenExpira        DateTime?  
+  empleadoId         Int                @unique
 
-  role              Role         @relation(fields: [roleId], references: [id]) // <-- NUEVO
-  empleado          Empleado     @relation(fields: [empleadoId], references: [id])
-  expedientesCargados Expediente[]
+  role                 Role               @relation(fields: [roleId], references: [id]) // <-- NUEVO
+  empleado             Empleado           @relation(fields: [empleadoId], references: [id])
+  expedientesCargados  Expediente[]
   solicitudesAprobadas Solicitud[]
-  horariosCreados     Horario[]
-  llamadosEmitidos    LlamadoAtencion[]
-  nominasRegistradas  Nomina[]
-  entrevistas         Entrevista[]
-  notificaciones      Notificacion[]
-  bitacora            Bitacora[]
+  horariosCreados      Horario[]
+  llamadosEmitidos     LlamadoAtencion[]
+  nominasRegistradas   Nomina[]
+  entrevistas          Entrevista[]
+  notificaciones       Notificacion[]
+  bitacora             Bitacora[]
 }
 
 // ===================== EXPEDIENTE =====================
@@ -189,16 +189,16 @@ model Candidato {
 }
 
 model Entrevista {
-  id               Int                 @id @default(autoincrement())
-  fase             Int                 // 1, 2 o 3. Validar en el servicio (Prisma no tiene CHECK)
-  resultado        ResultadoEntrevista @default(PENDIENTE)
-  observaciones    String?
-  fecha            DateTime
-  candidatoId      Int
-  entrevistadorId  Int
+  id              Int                 @id @default(autoincrement())
+  fase            Int                 // 1, 2 o 3. Validar en el servicio (Prisma no tiene CHECK)
+  resultado       ResultadoEntrevista @default(PENDIENTE)
+  observaciones   String?
+  fecha           DateTime
+  candidatoId     Int
+  entrevistadorId Int
 
-  candidato        Candidato           @relation(fields: [candidatoId], references: [id])
-  entrevistador    Usuario             @relation(fields: [entrevistadorId], references: [id])
+  candidato       Candidato           @relation(fields: [candidatoId], references: [id])
+  entrevistador   Usuario             @relation(fields: [entrevistadorId], references: [id])
 }
 
 // ===================== HORARIOS =====================
@@ -276,6 +276,21 @@ model Nomina {
   registradoPor   Usuario  @relation(fields: [registradoPorId], references: [id])
 }
 
+// ===================== REPORTES E INCIDENCIAS (NUEVO) =====================
+
+model ReporteIncidencia {
+  id           Int      @id @default(autoincrement())
+  empleado     String
+  tipo         String   // Verbal, Escrito, etc.
+  gravedad     String   // Informativo, Leve, Moderado, Grave
+  supervisor   String
+  fecha        String
+  descripcion  String
+  seguimiento  String?
+  documentoUrl String?
+  createdAt    DateTime @default(now())
+}
+
 // ===================== NOTIFICACIONES Y AUDITORÍA =====================
 
 model Notificacion {
@@ -290,14 +305,14 @@ model Notificacion {
 }
 
 model Bitacora {
-  id             Int            @id @default(autoincrement())
-  tablaAfectada  String
-  idRegistro     Int            // id del registro afectado en tablaAfectada
-  accion         AccionBitacora
-  descripcion    String?        // detalle del cambio
-  fechaHora      DateTime       @default(now())
-  ipOrigen       String?
-  usuarioId      Int
+  id            Int            @id @default(autoincrement())
+  tablaAfectada String
+  idRegistro    Int            // id del registro afectado en tablaAfectada
+  accion        AccionBitacora
+  descripcion   String?        // detalle del cambio
+  fechaHora     DateTime       @default(now())
+  ipOrigen      String?
+  usuarioId     Int
 
-  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
 }

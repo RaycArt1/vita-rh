@@ -11,7 +11,8 @@ import Reclutamiento from "../pages/Reclutamiento";
 import ChefDashboard from "../pages/Chef/ChefDashboard";
 import RecuperarContrasena from "../pages/RecuperarContrasena";
 import RestablecerContrasena from "../pages/RestablecerContrasena";
-import Mantenimiento from "../pages/Mantenimiento"; // <--- Nueva importación
+import Mantenimiento from "../pages/Mantenimiento"; 
+import ReportesPage from "../pages/ReportesPage"; // <--- Nueva importación para el módulo de reportes
 
 export default function AppRouter() {
   return (
@@ -29,7 +30,8 @@ export default function AppRouter() {
       <Route path="/usuarios" element={<Usuarios />} />
       <Route path="/reclutamiento" element={<Reclutamiento />} />
       <Route path="/chef/dashboard" element={<ChefDashboard />} />
-      <Route path="/mantenimiento" element={<Mantenimiento />} /> {/* <--- Nueva ruta agregada */}
+      <Route path="/mantenimiento" element={<Mantenimiento />} />
+      <Route path="/reportes" element={<ReportesPage />} /> {/* <--- Nueva ruta para Reportes e Incidencias */}
     </Routes>
   );
 }
