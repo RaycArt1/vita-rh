@@ -4,14 +4,15 @@ import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Empleados from "../pages/Empleados";
 import Horarios from "../pages/Horarios";
-import Vacaciones from "../pages/Vacaciones";
+import Solicitudes from "../pages/Solicitudes";
 import Expedientes from "../pages/Expedientes";
 import Usuarios from "../pages/Usuarios";
 import Reclutamiento from "../pages/Reclutamiento";
 import ChefDashboard from "../pages/Chef/ChefDashboard";
 import RecuperarContrasena from "../pages/RecuperarContrasena";
 import RestablecerContrasena from "../pages/RestablecerContrasena";
-import Mantenimiento from "../pages/Mantenimiento"; // <--- Nueva importación
+import Mantenimiento from "../pages/Mantenimiento"; 
+import ReportesPage from "../pages/ReportesPage"; // <--- Nueva importación para el módulo de reportes
 
 export default function AppRouter() {
   return (
@@ -24,12 +25,13 @@ export default function AppRouter() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/empleados" element={<Empleados />} />
       <Route path="/horarios" element={<Horarios />} />
-      <Route path="/vacaciones" element={<Vacaciones />} />
+      <Route path="/solicitudes" element={<Solicitudes />} />
       <Route path="/expedientes" element={<Expedientes />} />
       <Route path="/usuarios" element={<Usuarios />} />
       <Route path="/reclutamiento" element={<Reclutamiento />} />
       <Route path="/chef/dashboard" element={<ChefDashboard />} />
-      <Route path="/mantenimiento" element={<Mantenimiento />} /> {/* <--- Nueva ruta agregada */}
+      <Route path="/mantenimiento" element={<Mantenimiento />} />
+      <Route path="/reportes" element={<ReportesPage />} /> {/* <--- Nueva ruta para Reportes e Incidencias */}
     </Routes>
   );
 }
