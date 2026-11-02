@@ -67,6 +67,15 @@ enum EstadoCandidato {
   DESCARTADO
 }
 
+enum EtapaReclutamiento {
+  APLICACION
+  REVISION_CV
+  ENTREVISTA
+  EVALUACION
+  OFERTA
+  CONTRATADO
+}
+
 enum ResultadoEntrevista {
   APROBADO
   REPROBADO
@@ -182,6 +191,7 @@ model Candidato {
   puestoAplicado String          // texto libre, (no es FK)
   cvArchivo      String?
   estado         EstadoCandidato @default(EN_PROCESO)
+  etapa EtapaReclutamiento @default(APLICACION)
   fechaRegistro  DateTime        @default(now())
 
   entrevistas    Entrevista[]

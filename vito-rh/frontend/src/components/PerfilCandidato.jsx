@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import "./PerfilCandidato.css";
+import { crearEntrevista } from "../services/reclutamientoService";
 
 const secciones = [
   "Información",
@@ -45,23 +46,41 @@ const [evaluacion, setEvaluacion] = useState({
 });
 
 const [editandoEvaluacion, setEditandoEvaluacion] = useState(false);
-const guardarEntrevista = () => {
+const guardarEntrevista = async () => {
   if (!entrevista.fecha || !entrevista.observaciones.trim()) {
     alert("Completa la fecha y las observaciones de la entrevista.");
     return;
   }
 
-  const entrevistaActualizada = {
-    ...entrevista,
-    observaciones: entrevista.observaciones.trim(),
-  };
+  try {
+    const entrevistaActualizada = {
+      ...entrevista,
+      observaciones: entrevista.observaciones.trim(),
+    };
 
-  onActualizar({
-    ...candidato,
-    entrevista: entrevistaActualizada,
-  });
+    await crearEntrevista(candidato.id, {
+      fecha: entrevista.fecha,
+      fase: 1,
+      resultado: entrevista.resultado
+        ? entrevista.resultado.toUpperCase()
+        : "PENDIENTE",
+      observaciones: entrevista.observaciones.trim(),
+    });
 
-  setEditandoEntrevista(false);
+    onActualizar({
+      ...candidato,
+      entrevista: entrevistaActualizada,
+    });
+
+    setEditandoEntrevista(false);
+    alert("Entrevista guardada correctamente.");
+  } catch (error) {
+    console.error("Error al guardar entrevista:", error);
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo guardar la entrevista. Verifica que hayas iniciado sesión."
+    );
+  }
 };
 
 const guardarEvaluacion = () => {
@@ -261,13 +280,13 @@ const avanzarEtapa = () => {
 
                 <div className="pc-ancho-completo">
                   <small>Currículum</small>
-                  {candidato.cv ? (
+                 {(candidato.cv || candidato.cvArchivo) ? (
                     <a
-                      href={URL.createObjectURL(candidato.cv)}
+                     href={`http://localhost:3000/api/reclutamiento/${candidato.id}/cv`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Ver CV: {candidato.cv.name}
+                      Ver CV
                     </a>
                   ) : (
                     <strong>No hay CV adjunto</strong>
