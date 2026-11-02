@@ -129,6 +129,7 @@ model Empleado {
   expedientes  Expediente[]
   horarios     Horario[]
   solicitudes  Solicitud[]
+  descansos Descanso[]
   llamados     LlamadoAtencion[]
   nominas      Nomina[]
 }
@@ -149,6 +150,7 @@ model Usuario {
   expedientesCargados Expediente[]
   solicitudesAprobadas Solicitud[]
   horariosCreados     Horario[]
+  descansosCreados Descanso[]
   llamadosEmitidos    LlamadoAtencion[]
   nominasRegistradas  Nomina[]
   entrevistas         Entrevista[]
@@ -300,4 +302,19 @@ model Bitacora {
   usuarioId      Int
 
   usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+// ===================== DESCANSOS =====================
+
+model Descanso {
+  id            Int      @id @default(autoincrement())
+  fecha         DateTime
+  fechaCreacion DateTime @default(now())
+  empleadoId    Int
+  creadoPorId   Int
+
+  empleado      Empleado @relation(fields: [empleadoId], references: [id])
+  creadoPor     Usuario  @relation(fields: [creadoPorId], references: [id])
+
+  @@unique([empleadoId, fecha])
 }

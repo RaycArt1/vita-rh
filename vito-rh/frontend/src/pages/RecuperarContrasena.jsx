@@ -37,7 +37,13 @@ export default function RecuperarContrasena() {
     <main className="login-page">
       <section className="login-brand-panel">
         <header className="login-brand">
-          <div className="login-brand-logo">VH</div>
+          <div className="text-center mb-3">
+          <img
+          src="/vita.jpeg"
+          alt="Logo Vito Pizzería"
+          style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }}
+          />
+          </div>
           <div>
             <strong>GestRH</strong>
             <span>Vita Pizzería</span>
@@ -53,7 +59,13 @@ export default function RecuperarContrasena() {
 
       <section className="login-form-panel">
         <div className="login-card">
-          <div className="login-card-logo">VH</div>
+          <div className="text-center mb-3">
+          <img
+          src="/vita.jpeg"
+          alt="Logo Vito Pizzería"
+          style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8 }}
+          />
+          </div>
           <h2>Recuperar contraseña</h2>
           <p className="login-subtitle">Escribe el correo con el que accedes al sistema.</p>
 
