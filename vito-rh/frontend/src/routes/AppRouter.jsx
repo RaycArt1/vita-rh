@@ -4,7 +4,7 @@ import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Empleados from "../pages/Empleados";
 import Horarios from "../pages/Horarios";
-import Vacaciones from "../pages/Vacaciones";
+import Solicitudes from "../pages/Solicitudes";
 import Expedientes from "../pages/Expedientes";
 import Usuarios from "../pages/Usuarios";
 import Reclutamiento from "../pages/Reclutamiento";
@@ -24,7 +24,7 @@ export default function AppRouter() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/empleados" element={<Empleados />} />
       <Route path="/horarios" element={<Horarios />} />
-      <Route path="/vacaciones" element={<Vacaciones />} />
+      <Route path="/solicitudes" element={<Solicitudes />} />
       <Route path="/expedientes" element={<Expedientes />} />
       <Route path="/usuarios" element={<Usuarios />} />
       <Route path="/reclutamiento" element={<Reclutamiento />} />
