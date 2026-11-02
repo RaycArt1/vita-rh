@@ -2,6 +2,7 @@
 node_modules/
 frontend/node_modules/
 backend/node_modules/
+backend/backend/
 
 # Variables de entorno y secretos
 .env
@@ -14,7 +15,7 @@ backend/prisma/*.db-journal
 *.sqlite
 *.sqlite3
 
-# Archivos de compilación
+# Archivos de compilaciï¿½n
 frontend/dist/
 backend/generated/prisma/
 

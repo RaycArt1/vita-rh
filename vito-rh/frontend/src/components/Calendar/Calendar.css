@@ -1,128 +1,595 @@
-.calendar-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:30px;
+
+/* =========================================
+   VITO RH - CALENDARIO DE TURNOS
+   Diseño moderno, limpio y minimalista
+========================================= */
+
+.weekly-calendar {
+  --vito-primary: #dc3038;
+  --vito-primary-hover: #bd252d;
+  --vito-text: #172033;
+  --vito-muted: #8490a3;
+  --vito-border: #e8ebf1;
+  --vito-background: #f5f6f8;
+
+  border: 1px solid var(--vito-border) !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+  background: #fff;
+  color: var(--vito-text);
+  box-shadow: 0 4px 18px rgba(20, 32, 55, 0.05) !important;
 }
 
-.calendar-weekdays{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    text-align:center;
-    font-weight:600;
-    color:#6c757d;
-    margin-bottom:18px;
+/* ENCABEZADO */
+
+.weekly-calendar > .card-header {
+  background: #fff;
+  border-bottom: 1px solid var(--vito-border);
+  padding: 24px 28px;
 }
 
-.calendar-weekdays div{
-    padding:12px;
-    border-bottom:2px solid #dee2e6;
+.weekly-calendar > .card-header h3 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: #172033;
 }
 
-.calendar-grid{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:14px;
+.weekly-calendar > .card-header .text-muted {
+  color: var(--vito-muted) !important;
+  font-size: 0.9rem;
 }
 
-/* ---------- Tarjetas del calendario ---------- */
+/* BOTONES GENERALES */
 
-.day-card{
-
-    background:white;
-
-    border:1px solid #dee2e6;
-
-    border-radius:14px;
-
-    min-height:150px;
-
-    padding:14px;
-
-    cursor:pointer;
-
-    transition:all .25s ease;
-
-    display:flex;
-
-    flex-direction:column;
-
+.weekly-calendar .btn {
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.day-card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:#0d6efd;
-
-    box-shadow:0 12px 24px rgba(0,0,0,.12);
-
+.weekly-calendar .btn-outline-primary {
+  color: var(--vito-primary);
+  border-color: #e5a5a8;
+  background: #fff;
 }
 
-.day-card.empty{
-
-    background:#f8f9fa;
-
-    border:none;
-
-    box-shadow:none;
-
-    cursor:default;
-
+.weekly-calendar .btn-outline-primary:hover {
+  color: #fff;
+  border-color: var(--vito-primary);
+  background: var(--vito-primary);
 }
 
-/* ---------- Número del día ---------- */
-
-.day-number{
-
-    font-size:22px;
-
-    font-weight:700;
-
-    margin-bottom:20px;
-
+.weekly-calendar .btn-primary,
+.weekly-calendar .btn-success {
+  background: var(--vito-primary);
+  border-color: var(--vito-primary);
+  color: #fff;
 }
 
-/* ---------- Información ---------- */
-
-.day-info{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:10px;
-
+.weekly-calendar .btn-primary:hover,
+.weekly-calendar .btn-success:hover {
+  background: var(--vito-primary-hover);
+  border-color: var(--vito-primary-hover);
 }
 
-.info-row{
+/* CONTENIDO */
 
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    padding:6px 8px;
-
-    background:#f8f9fa;
-
-    border-radius:8px;
-
-    font-size:14px;
-
+.weekly-calendar > .card-body {
+  padding: 26px 28px;
+  background: var(--vito-background);
 }
 
-.info-row span{
+/* GENERADOR DE HORARIOS */
 
-    color:#6c757d;
-
-    font-weight:500;
-
+.weekly-calendar .planning-generator {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--vito-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(20, 32, 55, 0.025);
 }
 
-.info-row strong{
+.weekly-calendar .planning-generator h5 {
+  color: var(--vito-text);
+  font-size: 1.15rem;
+  font-weight: 650;
+  margin-bottom: 20px !important;
+}
 
-    font-size:16px;
+.weekly-calendar .planning-generator .form-group {
+  min-width: 210px;
+}
 
+.weekly-calendar .planning-generator .form-label {
+  color: #465268;
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.weekly-calendar .planning-generator .form-control,
+.weekly-calendar .planning-generator .form-select {
+  min-width: 210px;
+  min-height: 42px;
+  border: 1px solid #dfe3ea;
+  border-radius: 9px;
+  color: #263248;
+  box-shadow: none;
+}
+
+.weekly-calendar .planning-generator .form-control:focus,
+.weekly-calendar .planning-generator .form-select:focus {
+  border-color: #df7379;
+  box-shadow: 0 0 0 3px rgba(220, 48, 56, 0.09);
+}
+
+/* RESUMEN DE ALERTAS */
+
+.weekly-calendar .planning-alert-summary {
+  padding: 17px 18px;
+  border: 1px solid var(--vito-border);
+  border-radius: 12px;
+  background: #fafbfc;
+}
+
+.weekly-calendar .planning-alert-summary h6 {
+  font-weight: 650;
+  color: var(--vito-text);
+  margin-bottom: 12px;
+}
+
+.weekly-calendar .planning-alert-summary .badge,
+.weekly-calendar .planning-generator .badge {
+  border-radius: 7px;
+  padding: 7px 11px;
+  font-weight: 600;
+}
+
+/* TABLAS DE ALERTAS */
+
+.weekly-calendar .planning-generator .table {
+  background: #fff;
+  border-color: var(--vito-border);
+  font-size: 0.86rem;
+}
+
+.weekly-calendar .planning-generator .table th {
+  background: #f8f9fb;
+  color: #596579;
+  font-weight: 650;
+}
+
+.weekly-calendar .planning-generator .table td,
+.weekly-calendar .planning-generator .table th {
+  padding: 11px 12px;
+  vertical-align: middle;
+}
+
+.weekly-calendar .planning-generator .alert {
+  border-radius: 10px;
+  padding: 15px 17px;
+}
+
+/* ENCABEZADO DEL CALENDARIO */
+
+.weekly-calendar .card-body > .d-flex h5 {
+  color: var(--vito-text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.weekly-calendar .card-body > .d-flex .form-control {
+  border: 1px solid #e0e4eb;
+  border-radius: 9px;
+  min-height: 40px;
+  box-shadow: none;
+}
+
+.weekly-calendar .card-body > .d-flex .form-control:focus {
+  border-color: #df7379;
+  box-shadow: 0 0 0 3px rgba(220, 48, 56, 0.08);
+}
+
+/* LEYENDA */
+
+.weekly-calendar .legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+}
+
+.weekly-calendar .card-body > .d-flex.flex-wrap.gap-3.small {
+  color: #66748a;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--vito-border);
+  border-radius: 10px;
+}
+
+/* TABLA PRINCIPAL */
+
+.weekly-calendar .weekly-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--vito-border);
+  border-radius: 13px;
+  box-shadow: 0 2px 8px rgba(20, 32, 55, 0.025);
+}
+
+.weekly-calendar .weekly-table {
+  width: 100%;
+  min-width: 1000px;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+
+.weekly-calendar .weekly-table th,
+.weekly-calendar .weekly-table td {
+  border-color: #edf0f4;
+  padding: 11px 10px;
+  vertical-align: middle;
+}
+
+/* ENCABEZADO DE DÍAS */
+
+.weekly-calendar .weekly-table thead th {
+  background: #f8f9fc;
+  color: #778399;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 16px 10px;
+}
+
+.weekly-calendar .weekly-table thead th:not(.employee-column) div:last-child {
+  color: #172033;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+/* COLUMNA DE EMPLEADOS */
+
+.weekly-calendar .employee-column {
+  min-width: 190px;
+  width: 190px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  color: #172033;
+  text-align: left;
+}
+
+.weekly-calendar .weekly-table thead .employee-column {
+  z-index: 3;
+  background: #f8f9fc;
+  color: #8490a3;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.4px;
+}
+
+.weekly-calendar .weekly-table tbody .employee-column {
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.weekly-calendar .employee-column small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--vito-muted) !important;
+}
+
+/* CELDAS */
+
+.weekly-calendar .weekly-cell {
+  min-width: 125px;
+  text-align: center;
+  background: #fff;
+}
+
+.weekly-calendar .weekly-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.weekly-calendar .weekly-table tbody tr:hover td,
+.weekly-calendar .weekly-table tbody tr:hover th {
+  background-color: #fafbfe;
+}
+
+/* SELECTORES DE TURNOS */
+
+.weekly-calendar .assignment-select {
+  width: 100%;
+  min-width: 115px;
+  min-height: 43px;
+  padding: 8px 25px 8px 10px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.15s ease;
+}
+
+.weekly-calendar .assignment-select:hover {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+}
+
+.weekly-calendar .assignment-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 48, 56, 0.10);
+}
+
+/* COLORES DE TURNOS */
+
+.weekly-calendar .turno-1 {
+  background-color: #fff2c9 !important;
+  color: #825600 !important;
+  border: 1px solid #ffdf83 !important;
+}
+
+.weekly-calendar .turno-2 {
+  background-color: #ffeded !important;
+  color: #a72e35 !important;
+  border: 1px solid #ffcaca !important;
+}
+
+.weekly-calendar .descanso {
+  background-color: #eff3f8 !important;
+  color: #53657e !important;
+  border: 1px solid #dce4ef !important;
+}
+
+.weekly-calendar .sin-asignar {
+  background-color: #f0f0f2 !important;
+  color: #626875 !important;
+  border: 1px solid #dedfe4 !important;
+}
+
+/* LEYENDA DE COLORES */
+
+.weekly-calendar .legend-dot.turno-1 {
+  background: #fff2c9;
+}
+
+.weekly-calendar .legend-dot.turno-2 {
+  background: #ffeded;
+}
+
+.weekly-calendar .legend-dot.descanso {
+  background: #eff3f8;
+}
+
+.weekly-calendar .legend-dot.sin-asignar {
+  background: #f0f0f2;
+}
+
+/* MENSAJES */
+
+.weekly-calendar .alert {
+  border-radius: 10px;
+}
+
+/* SCROLL */
+
+.weekly-calendar .weekly-table-wrapper::-webkit-scrollbar {
+  height: 9px;
+}
+
+.weekly-calendar .weekly-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f2f5;
+  border-radius: 10px;
+}
+
+.weekly-calendar .weekly-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd1dc;
+  border-radius: 10px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .weekly-calendar > .card-header {
+    padding: 18px;
+  }
+
+  .weekly-calendar > .card-body {
+    padding: 16px;
+  }
+
+  .weekly-calendar .planning-generator {
+    padding: 17px;
+  }
+
+  .weekly-calendar .weekly-table {
+    min-width: 1000px;
+  }
+
+  .weekly-calendar .employee-column {
+    min-width: 155px;
+    width: 155px;
+  }
+}
+
+
+/* =====================================
+   EXPORTACIÓN PDF
+===================================== */
+
+.weekly-calendar-print {
+  display: none;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .weekly-calendar-print,
+  .weekly-calendar-print * {
+    visibility: visible !important;
+  }
+
+  .weekly-calendar-print {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 10px;
+    background: white !important;
+    color: #172033 !important;
+    font-family: Arial, sans-serif;
+  }
+
+  .weekly-calendar-print .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #dc3038;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
+  .weekly-calendar-print .print-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .weekly-calendar-print .print-header p {
+    color: #788397;
+    font-size: 11px;
+    margin: 4px 0 0;
+  }
+
+  .weekly-calendar-print .print-document-label {
+    color: #dc3038;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .weekly-calendar-print h3 {
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .weekly-calendar-print .print-period {
+    font-size: 12px;
+    color: #657187;
+    margin-bottom: 18px;
+  }
+
+  .weekly-calendar-print .print-calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .weekly-calendar-print .print-calendar-table th {
+    background: #f3f5f9 !important;
+    color: #263248;
+    font-size: 11px;
+    padding: 10px 5px;
+    border: 1px solid #dfe3ea;
+    text-align: center;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .weekly-calendar-print .print-calendar-table th:first-child {
+    width: 19%;
+  }
+
+  .weekly-calendar-print .print-calendar-table td {
+    border: 1px solid #e2e6ed;
+    padding: 6px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .weekly-calendar-print .print-employee {
+    text-align: left !important;
+    font-size: 11px;
+  }
+
+  .weekly-calendar-print .print-employee small {
+    display: block;
+    color: #7b8799;
+    margin-top: 4px;
+    font-size: 9px;
+  }
+
+  .weekly-calendar-print .print-turno-1,
+  .weekly-calendar-print .print-turno-2,
+  .weekly-calendar-print .print-descanso,
+  .weekly-calendar-print .print-sin-asignar {
+    border-radius: 5px;
+    padding: 8px 3px;
+    font-size: 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .weekly-calendar-print .print-turno-1 {
+    background: #fff2c9 !important;
+    color: #825600 !important;
+  }
+
+  .weekly-calendar-print .print-turno-2 {
+    background: #ffeded !important;
+    color: #a72e35 !important;
+  }
+
+  .weekly-calendar-print .print-descanso {
+    background: #eff3f8 !important;
+    color: #53657e !important;
+  }
+
+  .weekly-calendar-print .print-sin-asignar {
+    background: #f0f0f2 !important;
+    color: #626875 !important;
+  }
+
+  .weekly-calendar-print td small {
+    display: block;
+    margin-top: 3px;
+    font-size: 9px;
+  }
+
+  .weekly-calendar-print .print-legend {
+    display: flex;
+    gap: 25px;
+    margin-top: 18px;
+    font-size: 10px;
+  }
+
+  .weekly-calendar-print .print-footer {
+    border-top: 1px solid #e2e6ed;
+    margin-top: 22px;
+    padding-top: 10px;
+    color: #8791a1;
+    font-size: 9px;
+    text-align: right;
+  }
 }

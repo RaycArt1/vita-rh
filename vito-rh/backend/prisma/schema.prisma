@@ -129,6 +129,7 @@ model Empleado {
   expedientes  Expediente[]
   horarios     Horario[]
   solicitudes  Solicitud[]
+  descansos Descanso[]
   llamados     LlamadoAtencion[]
   nominas      Nomina[]
 }
@@ -154,6 +155,7 @@ model Usuario {
   entrevistas          Entrevista[]
   notificaciones       Notificacion[]
   bitacora             Bitacora[]
+  
 }
 
 // ===================== EXPEDIENTE =====================
@@ -314,5 +316,24 @@ model Bitacora {
   ipOrigen      String?
   usuarioId     Int
 
+<<<<<<< HEAD
   usuario       Usuario        @relation(fields: [usuarioId], references: [id])
+=======
+  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+// ===================== DESCANSOS =====================
+
+model Descanso {
+  id            Int      @id @default(autoincrement())
+  fecha         DateTime
+  fechaCreacion DateTime @default(now())
+  empleadoId    Int
+  creadoPorId   Int
+
+  empleado      Empleado @relation(fields: [empleadoId], references: [id])
+  creadoPor     Usuario  @relation(fields: [creadoPorId], references: [id])
+
+  @@unique([empleadoId, fecha])
+>>>>>>> origin/main
 }
