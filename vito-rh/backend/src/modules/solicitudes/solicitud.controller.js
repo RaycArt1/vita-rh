@@ -1,4 +1,5 @@
 import * as solicitudService from "./solicitud.service.js";
+import { registrarBitacora } from "../bitacora/bitacora.service.js";
 
 const TIPOS = ["VACACION", "PERMISO", "INCAPACIDAD"];
 
@@ -71,7 +72,16 @@ export async function crearSolicitud(req, res) {
       estado: "PENDIENTE",
     });
 
-    res.status(201).json(solicitud);
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: "INSERT",
+      tablaAfectada: "Solicitud",
+      idRegistro: solicitud.id,
+      descripcion: `Solicitud de ${tipoSolicitud.toLowerCase()} creada del ${inicio.toISOString().slice(0, 10)} al ${fin.toISOString().slice(0, 10)}`,
+    ipOrigen: req.ip,
+    });
+
+res.status(201).json(solicitud);
   } catch (error) {
     errorServidor(res, error);
   }
@@ -116,7 +126,15 @@ export async function cambiarEstado(req, res) {
       comentarioGerente: comentarioGerente ?? null,
       aprobadoPorId: req.usuario?.id ?? null,
     });
-
+    
+    await registrarBitacora({
+    usuarioId: req.usuario.id,
+    accion: "UPDATE",
+    tablaAfectada: "Solicitud",
+    idRegistro: id,
+    descripcion: `Estado cambiado de ${existente.estado} a ${estado}`,
+    ipOrigen: req.ip,
+});
     res.json(solicitud);
   } catch (error) {
     errorServidor(res, error);
@@ -176,11 +194,31 @@ export async function editarSolicitud(req, res) {
       }
     }
 
+    const cambios = [];
+      if (tipo !== existente.tipoSolicitud) {
+        cambios.push(`tipo de ${existente.tipoSolicitud.toLowerCase()} a ${tipo.toLowerCase()}`);
+      }
+      if (inicio.getTime() !== new Date(existente.fechaInicio).getTime() || fin.getTime() !== new Date(existente.fechaFin).getTime()) {
+        cambios.push(`fechas de ${existente.fechaInicio.toISOString().slice(0, 10)} al ${existente.fechaFin.toISOString().slice(0, 10)} a ${inicio.toISOString().slice(0, 10)} al ${fin.toISOString().slice(0, 10)}`);
+      }
+      if ((motivo ?? existente.motivo ?? "") !== (existente.motivo ?? "")) {
+        cambios.push("motivo actualizado");
+      }
+
     const solicitud = await solicitudService.actualizarSolicitud(id, {
       tipoSolicitud: tipo,
       fechaInicio: inicio,
       fechaFin: fin,
       motivo: motivo ?? existente.motivo,
+    });
+
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: "UPDATE",
+      tablaAfectada: "Solicitud",
+      idRegistro: id,
+     descripcion: cambios.join("; ") || "Sin cambios relevantes",
+      ipOrigen: req.ip,
     });
 
     res.json(solicitud);
