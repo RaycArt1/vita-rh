@@ -24,7 +24,7 @@ const menu = [
   { nombre: "Solicitudes", ruta: "/solicitudes", icono: <FaUmbrellaBeach />, detalle: "Vacaciones y permisos" },
   { nombre: "Reclutamiento", ruta: "/reclutamiento", icono: <FaUserTie />, detalle: "Selección de personal" },
   { nombre: "Planillas", ruta: "/planillas", icono: <FaMoneyBillWave />, detalle: "Pagos y deducciones" },
-  { nombre: "Historial", ruta: "/historial", icono: <FaHistory />, detalle: "Registro de actividad" },
+  { nombre: "Historial", ruta: "/bitacora", icono: <FaHistory />, detalle: "Registro de actividad" },
   { nombre: "Mantenimiento", ruta: "/mantenimiento", icono: <FaWrench />, detalle: "Gestión y soporte" },
 ];
 

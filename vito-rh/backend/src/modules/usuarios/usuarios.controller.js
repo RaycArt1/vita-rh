@@ -1,4 +1,5 @@
 import * as usuariosService from "./usuarios.service.js";
+import { registrarBitacora } from "../bitacora/bitacora.service.js";
 import prisma from "../../config/prisma.js"; // Asegúrate de importar prisma si validas dinámicamente
 
 // Lista estricta actualizada con los roles que ya utilizas
@@ -11,6 +12,7 @@ function idValido(valor) {
   const id = Number(valor);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
+
 
 function responderError(res, error) {
   if (error.code === "P2002") {
@@ -106,7 +108,16 @@ export async function crear(req, res) {
       empleadoId,
     });
 
-    res.status(201).json(usuario);
+    await registrarBitacora({
+  usuarioId: req.usuario.id,
+  accion: "INSERT",
+  tablaAfectada: "Usuario",
+  idRegistro: usuario.id,
+  descripcion: `Usuario ${usuario.username} creado con rol ${usuario.rol}`,
+  ipOrigen: req.ip,
+});
+
+res.status(201).json(usuario);
   } catch (error) {
     responderError(res, error);
   }
@@ -118,6 +129,14 @@ export async function actualizar(req, res) {
     if (!id) {
       return res.status(400).json({ mensaje: "ID no válido." });
     }
+
+  const anterior = await prisma.usuario.findUnique({
+    where: { id },
+    include: { role: true },
+    });
+    if (!anterior) {
+    return res.status(404).json({ mensaje: "Usuario no encontrado." });
+    } 
 
     const cambios = {};
 
@@ -166,7 +185,32 @@ export async function actualizar(req, res) {
       cambios.activo = req.body.activo;
     }
 
-    res.json(await usuariosService.actualizarUsuario(id, cambios));
+    const actualizado = await usuariosService.actualizarUsuario(id, cambios);
+
+const partes = [];
+if (cambios.rol !== undefined && actualizado.roleId !== anterior.roleId) {
+  partes.push(`Rol de ${anterior.role?.nombre} a ${actualizado.rol}`);
+}
+if (cambios.username !== undefined && cambios.username !== anterior.username) {
+  partes.push(`Usuario de ${anterior.username} a ${cambios.username}`);
+}
+if (cambios.activo !== undefined && cambios.activo !== anterior.activo) {
+  partes.push(cambios.activo ? "Usuario activado" : "Usuario desactivado");
+}
+if (cambios.password) {
+  partes.push("contraseña actualizada");
+}
+
+await registrarBitacora({
+  usuarioId: req.usuario.id,
+  accion: "UPDATE",
+  tablaAfectada: "Usuario",
+  idRegistro: id,
+  descripcion: partes.join("; ") || "Sin cambios relevantes",
+  ipOrigen: req.ip,
+});
+
+res.json(actualizado);
   } catch (error) {
     responderError(res, error);
   }

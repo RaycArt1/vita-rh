@@ -2,20 +2,14 @@ import { Router } from "express";
 import authRoutes from "../modules/auth/auth.routes.js";
 import empleadoRoutes from "../modules/empleados/empleado.routes.js";
 import horariosRoutes from "../modules/horarios/horario.routes.js";
+import descansosRoutes from "../modules/horarios/descanso.routes.js";
 import usuariosRoutes from "../modules/usuarios/usuarios.routes.js";
 import rolesRoutes from "../modules/roles/roles.routes.js";
 import mantenimientoRoutes from "../modules/mantenimiento/mantenimiento.routes.js";
-import reporteRoutes from "../modules/reportes/reportes.routes.js";
-import descansoRoutes from "../modules/horarios/descanso.routes.js";
-import mantenimientoRoutes from "../mantenimiento/mantenimiento.routes.js"; // <--- Nueva importación
+import reportesRoutes from "../modules/reportes/reportes.routes.js";
 import reclutamientoRoutes from "../modules/reclutamiento/reclutamiento.routes.js";
-
-import reporteRoutes from "../modules/reportes/reportes.routes.js";
-
-const router = Router();
-
-import descansosRoutes from "../modules/horarios/descanso.routes.js";
 import solicitudRoutes from "../modules/solicitudes/solicitud.routes.js";
+import bitacoraRoutes from "../modules/bitacora/bitacora.routes.js";
 
 const router = Router();
 
@@ -26,12 +20,17 @@ router.use("/empleados", empleadoRoutes);
 router.use("/usuarios", usuariosRoutes);
 router.use("/roles", rolesRoutes);
 router.use("/mantenimiento", mantenimientoRoutes);
-router.use("/reportes", reporteRoutes);
-router.use("/descansos", descansoRoutes);
+router.use("/reportes", reportesRoutes);
 router.use("/reclutamiento", reclutamientoRoutes);
-router.use("/mantenimiento", mantenimientoRoutes); // <--- Nueva ruta agregada
-
-router.use("/reportes", reporteRoutes); // <--- Montado correctamente bajo /api/reportes
 router.use("/solicitudes", solicitudRoutes);
+router.use("/bitacora", bitacoraRoutes);
+
+router.get("/", (req, res) => {
+  res.json({
+    sistema: "Vito RH",
+    version: "1.0.0",
+    estado: "API funcionando",
+  });
+});
 
 export default router;

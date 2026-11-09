@@ -13,6 +13,7 @@ import RecuperarContrasena from "../pages/RecuperarContrasena";
 import RestablecerContrasena from "../pages/RestablecerContrasena";
 import Mantenimiento from "../pages/Mantenimiento"; 
 import ReportesPage from "../pages/ReportesPage"; // <--- Nueva importación para el módulo de reportes
+import Bitacora from "../pages/Bitacora";
 
 export default function AppRouter() {
   return (
@@ -32,6 +33,7 @@ export default function AppRouter() {
       <Route path="/chef/dashboard" element={<ChefDashboard />} />
       <Route path="/mantenimiento" element={<Mantenimiento />} />
       <Route path="/reportes" element={<ReportesPage />} /> {/* <--- Nueva ruta para Reportes e Incidencias */}
+      <Route path="/bitacora" element={<Bitacora />} />
     </Routes>
   );
 }
