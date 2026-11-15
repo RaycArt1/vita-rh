@@ -1,4 +1,5 @@
 import prisma from "../../config/prisma.js";
+import { registrarBitacora } from "../bitacora/bitacora.service.js";
 
 // Listar todos los roles
 export async function listarRoles(req, res) {
@@ -38,7 +39,17 @@ export async function crearRol(req, res) {
       },
     });
 
-    res.status(201).json(nuevoRol);
+    await registrarBitacora({
+  usuarioId: req.usuario.id,
+  accion: "INSERT",
+  tablaAfectada: "Role",
+  idRegistro: nuevoRol.id,
+  descripcion: `Rol ${nuevoRol.nombre} creado`,
+  ipOrigen: req.ip,
+});
+
+res.status(201).json(nuevoRol);
+
   } catch (error) {
     console.error("Error al crear rol:", error);
     res.status(500).json({ mensaje: "Error interno al crear el rol." });

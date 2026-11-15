@@ -2,6 +2,10 @@
 import * as horarioService from "./horario.service.js";
 import * as generadorService from "./generador.service.js";
 
+function obtenerMensajeError(error) {
+  return String(error?.message ?? "");
+}
+
 export async function obtenerHorarios(req, res) {
   try {
     const horarios = await horarioService.obtenerHorarios();
@@ -26,20 +30,20 @@ export async function crearHorario(req, res) {
   } catch (error) {
     console.error("Error al crear horario:", error);
 
+    const mensaje = obtenerMensajeError(error).toLowerCase();
+
     const esErrorValidacion =
-      error.message.includes("fecha") ||
-      error.message.includes("turno") ||
-      error.message.includes("obligatorios");
+      mensaje.includes("fecha") ||
+      mensaje.includes("turno") ||
+      mensaje.includes("obligatorios");
 
     return res.status(esErrorValidacion ? 400 : 500).json({
       mensaje: esErrorValidacion
-        ? error.message
+        ? obtenerMensajeError(error)
         : "No se pudo crear el horario.",
     });
   }
 }
-
-
 
 export async function cambiarAsignacion(req, res) {
   try {
@@ -52,21 +56,30 @@ export async function cambiarAsignacion(req, res) {
   } catch (error) {
     console.error("Error al cambiar asignación:", error);
 
+    const mensajeOriginal = obtenerMensajeError(error);
+    const mensaje = mensajeOriginal.toLowerCase();
+
     const esValidacion =
-      error.message.includes("fecha") ||
-      error.message.includes("turno") ||
-      error.message.includes("asignación") ||
-      error.message.includes("empleado") ||
-      error.message.includes("administrador");
+      mensaje.includes("fecha") ||
+      mensaje.includes("turno") ||
+      mensaje.includes("asignación") ||
+      mensaje.includes("empleado") ||
+      mensaje.includes("administrador") ||
+      mensaje.includes("descanso") ||
+      mensaje.includes("área") ||
+      mensaje.includes("area") ||
+      mensaje.includes("viernes") ||
+      mensaje.includes("sábado") ||
+      mensaje.includes("sabado") ||
+      mensaje.includes("domingo");
 
     return res.status(esValidacion ? 400 : 500).json({
       mensaje: esValidacion
-        ? error.message
-        : "No se pudo cambiar la asignación.",
+        ? mensajeOriginal
+        : "No se pudo cambiar la asignación debido a un error interno.",
     });
   }
 }
-
 
 export async function generarVistaPrevia(req, res) {
   try {
@@ -80,7 +93,9 @@ export async function generarVistaPrevia(req, res) {
     console.error("Error al generar horarios:", error);
 
     return res.status(400).json({
-      mensaje: error.message || "No se pudo generar la planificación.",
+      mensaje:
+        obtenerMensajeError(error) ||
+        "No se pudo generar la planificación.",
     });
   }
 }
@@ -97,18 +112,24 @@ export async function guardarPlanificacion(req, res) {
   } catch (error) {
     console.error("Error al guardar planificación:", error);
 
+    const mensajeOriginal = obtenerMensajeError(error);
+    const mensaje = mensajeOriginal.toLowerCase();
+
     const esValidacion =
-      error.message.includes("mes") ||
-      error.message.includes("modo") ||
-      error.message.includes("conflictos") ||
-      error.message.includes("asignar") ||
-      error.message.includes("administrador") ||
-      error.message.includes("empleado") ||
-      error.message.includes("asignación") ||
-      error.message.includes("activo");
+      mensaje.includes("mes") ||
+      mensaje.includes("modo") ||
+      mensaje.includes("conflictos") ||
+      mensaje.includes("asignar") ||
+      mensaje.includes("administrador") ||
+      mensaje.includes("empleado") ||
+      mensaje.includes("asignación") ||
+      mensaje.includes("activo") ||
+      mensaje.includes("descanso") ||
+      mensaje.includes("área") ||
+      mensaje.includes("area");
 
     return res.status(esValidacion ? 400 : 500).json({
-      mensaje: error.message || "No se pudo guardar la planificación.",
+      mensaje: mensajeOriginal || "No se pudo guardar la planificación.",
     });
   }
 }

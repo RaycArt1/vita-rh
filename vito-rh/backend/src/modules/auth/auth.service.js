@@ -45,6 +45,7 @@ export async function login(username, password) {
       id: usuario.id,
       username: usuario.username,
       rol: usuario.role?.nombre || "ADMINISTRADOR",
+      empleadoId: usuario.empleadoId,
     },
     process.env.JWT_SECRET,
     {
@@ -58,6 +59,7 @@ export async function login(username, password) {
       id: usuario.id,
       username: usuario.username,
       rol: usuario.role?.nombre || "ADMINISTRADOR",
+      empleadoId: usuario.empleadoId,
       empleado: usuario.empleado,
     },
   };

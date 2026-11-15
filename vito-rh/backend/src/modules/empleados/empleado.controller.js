@@ -1,4 +1,5 @@
 import * as empleadoService from "./empleado.service.js";
+import { registrarBitacora } from "../bitacora/bitacora.service.js";
 
 const CAMPOS_OBLIGATORIOS = [
   "nombres",
@@ -122,6 +123,15 @@ export async function crearEmpleado(req, res) {
       salarioBase,
     });
 
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: "INSERT",
+      tablaAfectada: "Empleado",
+      idRegistro: empleado.id,
+      descripcion: `Empleado ${empleado.nombres} ${empleado.apellidos} registrado`,
+      ipOrigen: req.ip,
+    });
+
     res.status(201).json(empleado);
   } catch (error) {
     if (error.code === "P2002") {
@@ -172,8 +182,36 @@ export async function actualizarEmpleado(req, res) {
       }
     }
 
+  const detalles = [];
+    if (cambios.puestoId !== undefined && cambios.puestoId !== existente.puestoId) {
+      detalles.push("Puesto Actualizado");
+    }
+    if (cambios.areaId !== undefined && cambios.areaId !== existente.areaId) {
+      detalles.push("Área Actualizada");
+    }
+    if (cambios.salarioBase !== undefined && Number(cambios.salarioBase) !== existente.salarioBase) {
+      detalles.push("Salario Actualizado");
+    }
+    if (cambios.correo !== undefined && cambios.correo !== existente.correo) {
+      detalles.push("Correo Actualizado");
+    }
+    if (cambios.telefono !== undefined && cambios.telefono !== existente.telefono) {
+      detalles.push("Teléfono Actualizado");
+    }
+
     const empleado = await empleadoService.actualizarEmpleado(id, cambios);
+
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: "UPDATE",
+      tablaAfectada: "Empleado",
+      idRegistro: id,
+      descripcion: detalles.join("; ") || "Sin cambios relevantes",
+      ipOrigen: req.ip,
+    });
+
     res.json(empleado);
+
   } catch (error) {
     if (error.code === "P2002") {
       const campo = error.meta?.target?.[0];
@@ -204,7 +242,17 @@ export async function desactivarEmpleado(req, res) {
       id,
       motivoBaja || null
     );
+
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: "UPDATE",
+      tablaAfectada: "Empleado",
+      idRegistro: id,
+      descripcion: `Empleado ${empleado.nombres} ${empleado.apellidos} desactivado${motivoBaja ? `: ${motivoBaja}` : ""}`,
+      ipOrigen: req.ip,
+    });
     res.json(empleado);
+    
   } catch (error) {
     errorServidor(res, error);
   }

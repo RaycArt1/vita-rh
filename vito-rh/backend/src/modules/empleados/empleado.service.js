@@ -1,10 +1,15 @@
-
 import prisma from "../../config/prisma.js";
 
 const incluirPuesto = {
   puesto: {
     include: {
       area: true,
+    },
+  },
+  // Necesario para que el calendario pueda identificar y excluir administradores.
+  usuario: {
+    include: {
+      role: true,
     },
   },
 };
@@ -23,7 +28,6 @@ export async function obtenerEmpleadoPorId(id) {
   });
 }
 
-
 export async function existePuesto(puestoId) {
   const puesto = await prisma.puesto.findUnique({
     where: { id: puestoId },
@@ -32,7 +36,6 @@ export async function existePuesto(puestoId) {
 
   return Boolean(puesto);
 }
-
 
 export async function obtenerAreas() {
   return prisma.area.findMany({
