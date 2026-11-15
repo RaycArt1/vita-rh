@@ -14,6 +14,16 @@ import RestablecerContrasena from "../pages/RestablecerContrasena";
 import Mantenimiento from "../pages/Mantenimiento"; 
 import ReportesPage from "../pages/ReportesPage"; // <--- Nueva importación para el módulo de reportes
 
+function RutaPrivada({ children }) {
+  const token = sessionStorage.getItem("gestRH_token");
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
 export default function AppRouter() {
   return (
     <Routes>
@@ -28,7 +38,14 @@ export default function AppRouter() {
       <Route path="/solicitudes" element={<Solicitudes />} />
       <Route path="/expedientes" element={<Expedientes />} />
       <Route path="/usuarios" element={<Usuarios />} />
-      <Route path="/reclutamiento" element={<Reclutamiento />} />
+     <Route
+  path="/reclutamiento"
+  element={
+    <RutaPrivada>
+      <Reclutamiento />
+    </RutaPrivada>
+  }
+/>
       <Route path="/chef/dashboard" element={<ChefDashboard />} />
       <Route path="/mantenimiento" element={<Mantenimiento />} />
       <Route path="/reportes" element={<ReportesPage />} /> {/* <--- Nueva ruta para Reportes e Incidencias */}

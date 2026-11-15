@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import MainLayout from "../layouts/MainLayout";
 import "./Reclutamiento.css";
 import FormularioCandidato from "../components/FormularioCandidato";
 import PerfilCandidato from "../components/PerfilCandidato";
@@ -74,6 +75,7 @@ const etapas = [
 export default function Reclutamiento() {
 const [vacantes, setVacantes] = useState(vacantesIniciales);
 const [candidatos, setCandidatos] = useState([]);
+const [vistaCandidatos, setVistaCandidatos] = useState("En proceso");
 useEffect(() => {
   console.log(
     "CANDIDATOS ACTUALIZADOS:",
@@ -109,21 +111,89 @@ const nombresEtapas = {
         puesto: candidato.puestoAplicado,
         cvArchivo: candidato.cvArchivo,
         fecha: candidato.fechaRegistro?.slice(0, 10) || "",
-       estado: candidato.estado === "DESCARTADO"
-  ? "Rechazado"
-  : nombresEtapas[candidato.etapa] || "Aplicación",
-        puntuacion: 0,
-        entrevista: candidato.entrevistas?.length
+      
+estado:
+  candidato.estado === "DESCARTADO"
+    ? "Descartado"
+    : candidato.estado === "CONTRATADO"
+      ? "Contratado"
+      : nombresEtapas[candidato.etapa] || "Aplicación",
+
+motivoDescarte: candidato.motivoDescarte || "",
+fechaDescarte: candidato.fechaDescarte || null,
+
+      puntuacion: candidato.evaluacion?.puntuacion ?? 0,
+      oferta: candidato.oferta
   ? {
-      fecha: candidato.entrevistas[0].fecha?.slice(0, 10) || "",
-      tipo: "Presencial",
+      id: candidato.oferta.id,
+      tipoContrato: candidato.oferta.tipoContrato,
+      salario: candidato.oferta.salario,
+      fechaInicio: candidato.oferta.fechaInicio?.slice(0, 10) || "",
+      estado:
+        candidato.oferta.estado === "ACEPTADA"
+          ? "Aceptada"
+          : candidato.oferta.estado === "RECHAZADA"
+          ? "Rechazada"
+          : "Pendiente",
+    }
+  : null,
+        evaluacion: candidato.evaluacion
+  ? {
+      id: candidato.evaluacion.id,
+      puntuacion: candidato.evaluacion.puntuacion,
+      clasificacion: candidato.evaluacion.clasificacion,
+      observaciones: candidato.evaluacion.observaciones,
+      resultado: candidato.evaluacion.resultado,
+    }
+  : null,
+      entrevista: candidato.entrevistas?.length
+  ? {
+      id: candidato.entrevistas[0].id,
+      estadoEntrevista:
+  candidato.entrevistas[0].estadoEntrevista || "PENDIENTE",
+
+fecha: candidato.entrevistas[0].fecha
+  ? candidato.entrevistas[0].fecha.includes("T00:00:00")
+    ? candidato.entrevistas[0].fecha.slice(0, 10)
+    : new Date(candidato.entrevistas[0].fecha)
+        .toLocaleDateString("sv-SE", {
+          timeZone: "America/Tegucigalpa",
+        })
+  : "",
+
+hora:
+  candidato.entrevistas[0].fecha &&
+  !candidato.entrevistas[0].fecha.includes("T00:00:00")
+    ? new Date(candidato.entrevistas[0].fecha)
+        .toLocaleTimeString("sv-SE", {
+          timeZone: "America/Tegucigalpa",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+    : "",
+
+
+      tipo:
+        candidato.entrevistas[0].modalidad === "VIRTUAL"
+          ? "Virtual"
+          : candidato.entrevistas[0].modalidad === "TELEFONICA"
+          ? "Telefónica"
+          : "Presencial",
+
+      indicaciones: candidato.entrevistas[0].indicaciones || "",
+
       observaciones: candidato.entrevistas[0].observaciones || "",
+
       resultado:
         candidato.entrevistas[0].resultado === "APROBADO"
           ? "Aprobado"
-          : candidato.entrevistas[0].resultado === "RECHAZADO"
+          : candidato.entrevistas[0].resultado === "REPROBADO"
           ? "Rechazado"
           : "Pendiente",
+
+          documentoArchivo:
+  candidato.entrevistas[0].documentoArchivo || null,
       documento: null,
     }
   : null,
@@ -257,11 +327,15 @@ const guardarVacante = (evento) => {
       .toUpperCase();
 
   return (
+    <MainLayout>
     <main className="reclutamiento">
       <div className="reclutamiento-encabezado">
         <div>
           <p className="reclutamiento-subtitulo">
-            {candidatosActivos.length} candidatos activos — Vito Pizzería
+{candidatos.filter(
+  (c) => c.estado !== "Contratado" &&
+         c.estado !== "Descartado"
+).length} candidatos activos — Vito Pizzería
           </p>
           <h1>Reclutamiento y Selección</h1>
         </div>
@@ -271,6 +345,7 @@ const guardarVacante = (evento) => {
   type="button"
   className="reclutamiento-btn-secundario"
   onClick={() => setMostrarFormularioVacante(true)}
+  
 >
   + Crear vacante
 </button>
@@ -311,7 +386,57 @@ const guardarVacante = (evento) => {
       </section>
 
       <section className="reclutamiento-lista">
-        {candidatos.map((candidato) => (
+
+      
+<div
+  style={{
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginBottom: "20px",
+  }}
+>
+  {["En proceso", "Contratados", "Descartados"].map((vista) => (
+    <button
+      key={vista}
+      type="button"
+      onClick={() => setVistaCandidatos(vista)}
+      style={{
+        padding: "10px 18px",
+        borderRadius: "8px",
+        border: "1px solid #ddd",
+        cursor: "pointer",
+        background:
+          vistaCandidatos === vista ? "#ed3548" : "#fff",
+        color:
+          vistaCandidatos === vista ? "#fff" : "#333",
+        fontWeight: "600",
+      }}
+    >
+      {vista}
+    </button>
+  ))}
+</div>
+
+
+      
+{candidatos
+  .filter((candidato) => {
+    if (vistaCandidatos === "Contratados") {
+      return candidato.estado === "Contratado";
+    }
+
+    if (vistaCandidatos === "Descartados") {
+      return candidato.estado === "Descartado";
+    }
+
+    return (
+      candidato.estado !== "Contratado" &&
+      candidato.estado !== "Descartado"
+    );
+  })
+  .map((candidato) => (
+
           <article
   className="reclutamiento-candidato"
   key={candidato.id}
@@ -471,5 +596,7 @@ const guardarVacante = (evento) => {
 
 
     </main>
+     </MainLayout>
   );
+
 }

@@ -198,20 +198,58 @@ model Candidato {
 
   entrevistas    Entrevista[]
   empleado       Empleado?
+  evaluacion Evaluacion?
+  oferta Oferta?
+  motivoDescarte String?
+  fechaDescarte  DateTime?
 }
 
 model Entrevista {
-  id              Int                 @id @default(autoincrement())
-  fase            Int                 // 1, 2 o 3. Validar en el servicio (Prisma no tiene CHECK)
-  resultado       ResultadoEntrevista @default(PENDIENTE)
-  observaciones   String?
-  fecha           DateTime
-  candidatoId     Int
-  entrevistadorId Int
+  id               Int                 @id @default(autoincrement())
+  fase             Int                 // 1, 2 o 3. Validar en el servicio (Prisma no tiene CHECK)
+  resultado        ResultadoEntrevista @default(PENDIENTE)
+  observaciones    String?
+  fecha            DateTime
+  estadoEntrevista String @default("PENDIENTE")
+  modalidad        String  @default("PRESENCIAL")
+indicaciones     String?
+documentoArchivo String?
+  candidatoId      Int
+  entrevistadorId  Int
 
   candidato       Candidato           @relation(fields: [candidatoId], references: [id])
   entrevistador   Usuario             @relation(fields: [entrevistadorId], references: [id])
 }
+
+
+
+model Evaluacion {
+  id              Int      @id @default(autoincrement())
+  candidatoId     Int      @unique
+  candidato       Candidato @relation(fields: [candidatoId], references: [id])
+
+  puntuacion      Int
+  clasificacion   String
+  observaciones   String
+  resultado       String   @default("PENDIENTE")
+  fechaEvaluacion DateTime @default(now())
+}
+
+
+model Oferta {
+  id            Int      @id @default(autoincrement())
+  candidatoId   Int      @unique
+  candidato     Candidato @relation(fields: [candidatoId], references: [id])
+
+  tipoContrato  String
+  salario       Decimal
+  fechaInicio   DateTime
+  estado        String   @default("PENDIENTE")
+  fechaOferta   DateTime @default(now())
+  fechaRespuesta DateTime?
+}
+
+
 
 // ===================== HORARIOS =====================
 
@@ -326,9 +364,6 @@ model Bitacora {
   ipOrigen      String?
   usuarioId     Int
 
-<<<<<<< HEAD
-  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
-=======
   usuario        Usuario        @relation(fields: [usuarioId], references: [id])
 }
 
@@ -345,5 +380,4 @@ model Descanso {
   creadoPor     Usuario  @relation(fields: [creadoPorId], references: [id])
 
   @@unique([empleadoId, fecha])
->>>>>>> origin/main
 }

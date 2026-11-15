@@ -1,7 +1,19 @@
 
 import { useState } from "react";
 import "./PerfilCandidato.css";
-import { crearEntrevista } from "../services/reclutamientoService";
+import {
+  crearEntrevista,
+  actualizarEntrevista,
+  cambiarEstadoEntrevista,
+  subirDocumentoEntrevista,
+  obtenerDocumentoEntrevista,
+  guardarEvaluacion as guardarEvaluacionEnServidor,
+  guardarOferta as guardarOfertaEnServidor,
+  responderOferta as responderOfertaEnServidor,
+  descartarCandidato as descartarCandidatoEnServidor,
+  obtenerCatalogosContratacion,
+contratarCandidato as contratarCandidatoEnServidor,
+} from "../services/reclutamientoService";
 
 const secciones = [
   "Información",
@@ -18,6 +30,154 @@ export default function PerfilCandidato({
   onCerrar,
 }) {
   const [paso, setPaso] = useState(0);
+
+
+const [mostrarFormularioContratacion, setMostrarFormularioContratacion] =
+  useState(false);
+
+const [areasContratacion, setAreasContratacion] = useState([]);
+const [cargandoContratacion, setCargandoContratacion] = useState(false);
+const [guardandoContratacion, setGuardandoContratacion] = useState(false);
+
+const [datosContratacion, setDatosContratacion] = useState({
+  identidad: "",
+  telefono: "",
+  correo: "",
+  areaId: "",
+  puestoId: "",
+});
+
+const abrirFormularioContratacion = async () => {
+  try {
+    setCargandoContratacion(true);
+
+    const areas = await obtenerCatalogosContratacion();
+
+    setAreasContratacion(areas);
+    setDatosContratacion({
+      identidad: "",
+      telefono: candidato.telefono || "",
+      correo: candidato.correo || candidato.email || "",
+      areaId: "",
+      puestoId: "",
+    });
+
+    setMostrarFormularioContratacion(true);
+  } catch (error) {
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudieron cargar las áreas y puestos."
+    );
+  } finally {
+    setCargandoContratacion(false);
+  }
+};
+
+
+
+const confirmarContratacion = async (e) => {
+  e.preventDefault();
+
+  if (guardandoContratacion) return;
+
+  const { identidad, telefono, correo, areaId, puestoId } =
+    datosContratacion;
+
+  if (
+    !identidad.trim() ||
+    !telefono.trim() ||
+    !correo.trim() ||
+    !areaId ||
+    !puestoId
+  ) {
+    alert("Debes completar todos los campos.");
+    return;
+  }
+
+  const confirmado = window.confirm(
+    `¿Deseas contratar a ${candidato.nombre} ${candidato.apellido} y registrarlo como empleado?`
+  );
+
+  if (!confirmado) return;
+
+  try {
+    setGuardandoContratacion(true);
+
+    await contratarCandidatoEnServidor(candidato.id, {
+      identidad: identidad.trim(),
+      telefono: telefono.trim(),
+      correo: correo.trim(),
+      areaId: Number(areaId),
+      puestoId: Number(puestoId),
+    });
+
+    alert("¡Candidato contratado y registrado como empleado!");
+
+    setMostrarFormularioContratacion(false);
+    await onActualizar?.();
+    onCerrar?.();
+  } catch (error) {
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo registrar la contratación."
+    );
+  } finally {
+    setGuardandoContratacion(false);
+  }
+};
+
+
+
+const [descartando, setDescartando] = useState(false);
+
+const registrarDescarte = async () => {
+  if (
+    candidato.estado === "Contratado" ||
+    candidato.estado === "Descartado" ||
+    descartando
+  ) {
+    return;
+  }
+
+  const respuesta = window.prompt(
+    "Escribe el motivo por el que deseas descartar al candidato:"
+  );
+
+  if (respuesta === null) return;
+
+  const motivo = respuesta.trim();
+
+  if (motivo.length < 5 || motivo.length > 500) {
+    alert("El motivo debe tener entre 5 y 500 caracteres.");
+    return;
+  }
+
+  const confirmado = window.confirm(
+    `¿Estás segura de descartar a ${candidato.nombre} ${candidato.apellido}?\n\nMotivo: ${motivo}`
+  );
+
+  if (!confirmado) return;
+
+  try {
+    setDescartando(true);
+
+    await descartarCandidatoEnServidor(candidato.id, motivo);
+
+    alert("Candidato descartado correctamente.");
+
+    await onActualizar?.();
+    onCerrar?.();
+  } catch (error) {
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo descartar al candidato."
+    );
+  } finally {
+    setDescartando(false);
+  }
+};
+
+
   const [oferta, setOferta] = useState(
   candidato.oferta || {
     tipoContrato: "Término fijo",
@@ -43,34 +203,103 @@ const [evaluacion, setEvaluacion] = useState({
   puntuacion: candidato.evaluacion?.puntuacion ?? candidato.puntuacion ?? 0,
   clasificacion: candidato.evaluacion?.clasificacion ?? "Informativo",
   observaciones: candidato.evaluacion?.observaciones ?? "",
+  resultado: candidato.evaluacion?.resultado ?? "PENDIENTE",
 });
 
 const [editandoEvaluacion, setEditandoEvaluacion] = useState(false);
 const guardarEntrevista = async () => {
-  if (!entrevista.fecha || !entrevista.observaciones.trim()) {
-    alert("Completa la fecha y las observaciones de la entrevista.");
-    return;
-  }
+ 
+if (
+  !entrevista.fecha ||
+  !entrevista.hora ||
+  !entrevista.indicaciones?.trim()
+) {
+  alert("Completa la fecha, hora e indicaciones de la entrevista.");
+  return;
+}
+
+const fechaHora = new Date(
+  `${entrevista.fecha}T${entrevista.hora}:00`
+);
+
+if (Number.isNaN(fechaHora.getTime())) {
+  alert("La fecha u hora de la entrevista no es válida.");
+  return;
+}
+
+if (
+  (entrevista.estadoEntrevista || "PENDIENTE") === "PENDIENTE" &&
+  fechaHora.getTime() <= Date.now()
+) {
+  alert("La entrevista pendiente debe programarse para una fecha y hora futura.");
+  return;
+
+
+}
 
   try {
-    const entrevistaActualizada = {
-      ...entrevista,
-      observaciones: entrevista.observaciones.trim(),
-    };
+   
+const datosEntrevista = {
+ fecha: entrevista.hora
+  ? new Date(
+      `${entrevista.fecha}T${entrevista.hora}:00`
+    ).toISOString()
+  : entrevista.fecha,
+  fase: 1,
+  modalidad:
+    entrevista.tipo === "Telefónica"
+      ? "TELEFONICA"
+      : entrevista.tipo.toUpperCase(),
+  indicaciones: entrevista.indicaciones?.trim() || "",
+  observaciones: entrevista.observaciones.trim(),
+  resultado:
+    entrevista.resultado === "Rechazado"
+      ? "REPROBADO"
+      : entrevista.resultado.toUpperCase(),
+};
 
-    await crearEntrevista(candidato.id, {
-      fecha: entrevista.fecha,
-      fase: 1,
-      resultado: entrevista.resultado
-        ? entrevista.resultado.toUpperCase()
-        : "PENDIENTE",
-      observaciones: entrevista.observaciones.trim(),
-    });
+const guardada = entrevista.id
+  ? await actualizarEntrevista(candidato.id, entrevista.id, datosEntrevista)
+  : await crearEntrevista(candidato.id, datosEntrevista);
 
-    onActualizar({
-      ...candidato,
-      entrevista: entrevistaActualizada,
-    });
+const entrevistaActualizada = {
+  ...entrevista,
+  id: guardada.id,
+  observaciones: entrevista.observaciones.trim(),
+};
+
+setEntrevista(entrevistaActualizada);
+
+onActualizar({
+  ...candidato,
+  entrevista: entrevistaActualizada,
+});
+
+
+
+if (entrevista.documento instanceof File) {
+  try {
+    await subirDocumentoEntrevista(
+      candidato.id,
+      guardada.id,
+      entrevista.documento
+    );
+  } catch (errorDocumento) {
+    console.error(
+      "Error al subir el documento:",
+      errorDocumento
+    );
+
+    alert(
+      "Los datos de la entrevista se guardaron, pero el documento no pudo subirse."
+    );
+
+    setEditandoEntrevista(false);
+    return;
+  }
+}
+
+
 
     setEditandoEntrevista(false);
     alert("Entrevista guardada correctamente.");
@@ -83,7 +312,99 @@ const guardarEntrevista = async () => {
   }
 };
 
-const guardarEvaluacion = () => {
+
+const marcarEstadoEntrevista = async (nuevoEstado) => {
+  const entrevistaId = entrevista.id || candidato.entrevista?.id;
+
+  if (!entrevistaId) {
+    alert("Primero debes guardar la entrevista.");
+    return;
+  }
+
+  if ((entrevista.estadoEntrevista || "PENDIENTE") !== "PENDIENTE") {
+    alert("Esta entrevista ya fue realizada o cancelada.");
+    return;
+  }
+
+  const confirmar = window.confirm(
+    nuevoEstado === "REALIZADA"
+      ? "¿Confirmas que la entrevista ya se realizó?"
+      : "¿Confirmas que deseas cancelar esta entrevista?"
+  );
+
+  if (!confirmar) return;
+
+  try {
+    const respuesta = await cambiarEstadoEntrevista(
+      candidato.id,
+      entrevistaId,
+      nuevoEstado
+    );
+
+    const entrevistaActualizada = {
+      ...entrevista,
+      id: entrevistaId,
+      estadoEntrevista: respuesta.estadoEntrevista,
+    };
+
+    setEntrevista(entrevistaActualizada);
+
+    onActualizar({
+      ...candidato,
+      entrevista: entrevistaActualizada,
+    });
+
+    alert("Estado de entrevista actualizado correctamente.");
+  } catch (error) {
+    console.error("Error al cambiar estado de entrevista:", error);
+
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo actualizar el estado de la entrevista."
+    );
+  }
+};
+
+const abrirDocumentoEntrevista = async () => {
+  const entrevistaId = candidato.entrevista?.id;
+
+  if (!entrevistaId) {
+    alert("No se encontró la entrevista.");
+    return;
+  }
+
+  const ventana = window.open("", "_blank");
+
+  if (!ventana) {
+    alert("Permite las ventanas emergentes para ver el documento.");
+    return;
+  }
+
+  ventana.opener = null;
+
+  try {
+    const archivo = await obtenerDocumentoEntrevista(
+      candidato.id,
+      entrevistaId
+    );
+
+    const url = URL.createObjectURL(archivo);
+    ventana.location.href = url;
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) {
+    ventana.close();
+    console.error("Error al abrir documento:", error);
+
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo abrir el documento."
+    );
+  }
+};
+
+
+const guardarEvaluacion = async () => {
   const puntuacion = Number(evaluacion.puntuacion);
 
   if (
@@ -95,81 +416,157 @@ const guardarEvaluacion = () => {
     return;
   }
 
-  const evaluacionActualizada = {
-    ...evaluacion,
-    puntuacion,
-    observaciones: evaluacion.observaciones.trim(),
-  };
-
-  onActualizar({
-    ...candidato,
-    puntuacion,
-    evaluacion: evaluacionActualizada,
-  });
-
-  setEditandoEvaluacion(false);
-};
-
-
-const guardarOferta = () => {
-  if (!oferta.salario || !oferta.fechaInicio) {
-    alert("Completa el salario y la fecha de inicio.");
-    return;
-  }
-
-  const ofertaActualizada = {
-    ...oferta,
-    estado: "Pendiente",
-  };
-
-  setOferta(ofertaActualizada);
-
-  onActualizar({
-    ...candidato,
-    oferta: ofertaActualizada,
-  });
-
-  setEditandoOferta(false);
-};
-
-const responderOferta = (respuesta) => {
-  if (!candidato.oferta || candidato.estado !== "Oferta") {
-    return;
-  }
-
-  const ofertaActualizada = {
-    ...candidato.oferta,
-    estado: respuesta,
-  };
-
-  setOferta(ofertaActualizada);
-
-  onActualizar({
-    ...candidato,
-    oferta: ofertaActualizada,
-  });
-};
-  const registrarContratacion = () => {
   if (
-    candidato.estado !== "Oferta" ||
-    candidato.oferta?.estado !== "Aceptada"
+    typeof evaluacion.observaciones !== "string" ||
+    !evaluacion.observaciones.trim()
   ) {
+    alert("Debes escribir las observaciones de la evaluación.");
+    return;
+  }
+
+  const datosEvaluacion = {
+    puntuacion,
+    clasificacion: evaluacion.clasificacion,
+    observaciones: evaluacion.observaciones.trim(),
+    resultado: evaluacion.resultado || "PENDIENTE",
+  };
+
+  try {
+    const guardada = await guardarEvaluacionEnServidor(
+      candidato.id,
+      datosEvaluacion
+    );
+
+    const evaluacionActualizada = {
+      ...evaluacion,
+      ...guardada,
+    };
+
+    setEvaluacion(evaluacionActualizada);
+
+    onActualizar({
+      ...candidato,
+      puntuacion: guardada.puntuacion,
+      evaluacion: evaluacionActualizada,
+    });
+
+    setEditandoEvaluacion(false);
+
+    alert("Evaluación guardada correctamente.");
+  } catch (error) {
+    console.error("Error al guardar evaluación:", error);
+
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo guardar la evaluación."
+    );
+  }
+};
+
+
+const guardarOferta = async () => {
+  const salario = Number(oferta.salario);
+
+  if (
+    !Number.isFinite(salario) ||
+    salario <= 0 ||
+    !oferta.fechaInicio
+  ) {
+    alert("Completa un salario válido y la fecha de inicio.");
+    return;
+  }
+
+  try {
+    const guardada = await guardarOfertaEnServidor(
+      candidato.id,
+      {
+        tipoContrato: oferta.tipoContrato,
+        salario: String(oferta.salario),
+        fechaInicio: oferta.fechaInicio,
+      }
+    );
+
+    const ofertaActualizada = {
+      ...oferta,
+      id: guardada.id,
+      salario: guardada.salario,
+      fechaInicio: guardada.fechaInicio.slice(0, 10),
+      estado: "Pendiente",
+    };
+
+    setOferta(ofertaActualizada);
+
+    onActualizar({
+      ...candidato,
+      oferta: ofertaActualizada,
+    });
+
+    setEditandoOferta(false);
+    alert("Oferta guardada correctamente.");
+  } catch (error) {
+    console.error("Error al guardar oferta:", error);
+
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo guardar la oferta."
+    );
+  }
+};
+
+
+
+const responderOferta = async (respuesta) => {
+  if (
+    !candidato.oferta ||
+    candidato.estado !== "Oferta" ||
+    candidato.oferta.estado !== "Pendiente"
+  ) {
+    alert("No hay una oferta pendiente para responder.");
     return;
   }
 
   const confirmar = window.confirm(
-    `¿Deseas confirmar la contratación de ${candidato.nombre}?`
+    `¿Confirmas que el candidato ${respuesta.toLowerCase()} la oferta?`
   );
 
-  if (!confirmar) {
-    return;
-  }
+  if (!confirmar) return;
 
-  onActualizar({
-    ...candidato,
-    estado: "Contratado",
-  });
+  try {
+    const codigoRespuesta =
+      respuesta === "Aceptada" ? "ACEPTADA" : "RECHAZADA";
+
+    const ofertaGuardada = await responderOfertaEnServidor(
+      candidato.id,
+      codigoRespuesta
+    );
+
+    const ofertaActualizada = {
+      ...candidato.oferta,
+      estado:
+        ofertaGuardada.estado === "ACEPTADA"
+          ? "Aceptada"
+          : "Rechazada",
+      fechaRespuesta: ofertaGuardada.fechaRespuesta,
+    };
+
+    setOferta(ofertaActualizada);
+
+    onActualizar({
+      ...candidato,
+      oferta: ofertaActualizada,
+    });
+
+    alert("Respuesta de la oferta registrada correctamente.");
+  } catch (error) {
+    console.error("Error al responder oferta:", error);
+
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo registrar la respuesta de la oferta."
+    );
+  }
 };
+
 
 
 const etapasSeleccion = [
@@ -329,6 +726,23 @@ const avanzarEtapa = () => {
           />
         </label>
 
+
+<label>
+  HORA DE ENTREVISTA
+  <input
+    type="time"
+    value={entrevista.hora || ""}
+    onChange={(e) =>
+      setEntrevista({
+        ...entrevista,
+        hora: e.target.value,
+      })
+    }
+  />
+</label>
+
+
+
         <label>
           TIPO DE ENTREVISTA
           <select
@@ -346,20 +760,29 @@ const avanzarEtapa = () => {
           </select>
         </label>
 
-        <label>
-          OBSERVACIONES
-          <textarea
-            rows="4"
-            value={entrevista.observaciones}
-            onChange={(e) =>
-              setEntrevista({
-                ...entrevista,
-                observaciones: e.target.value,
-              })
-            }
-            placeholder="Escribe las observaciones de la entrevista..."
-          />
-        </label>
+<label>
+  INDICACIONES PARA LA ENTREVISTA
+  <textarea
+    rows="3"
+    value={entrevista.indicaciones || ""}
+    onChange={(e) =>
+      setEntrevista({
+        ...entrevista,
+        indicaciones: e.target.value,
+      })
+    }
+    placeholder={
+      entrevista.tipo === "Presencial"
+        ? "Escribe la dirección donde se realizará la entrevista..."
+        : entrevista.tipo === "Virtual"
+        ? "Escribe el enlace y las instrucciones para ingresar a la reunión..."
+        : "Escribe el número de teléfono y las instrucciones para la llamada..."
+    }
+  />
+</label>
+
+
+  
 <label>
   DOCUMENTO DE ENTREVISTA (PDF O IMAGEN)
   <input
@@ -395,22 +818,7 @@ const avanzarEtapa = () => {
     Documento seleccionado: {entrevista.documento.name}
   </p>
 )}
-        <label>
-          RESULTADO
-          <select
-            value={entrevista.resultado}
-            onChange={(e) =>
-              setEntrevista({
-                ...entrevista,
-                resultado: e.target.value,
-              })
-            }
-          >
-            <option value="Pendiente">Pendiente</option>
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-          </select>
-        </label>
+        
 
         <div className="pc-botones-oferta">
           <button
@@ -432,29 +840,62 @@ const avanzarEtapa = () => {
     ) : candidato.entrevista ? (
       <div>
         <p><strong>Fecha:</strong> {candidato.entrevista.fecha}</p>
+        <p>
+  <strong>Hora:</strong>{" "}
+  {candidato.entrevista.hora || "No registrada"}
+</p>
         <p><strong>Tipo:</strong> {candidato.entrevista.tipo}</p>
-        <p><strong>Observaciones:</strong> {candidato.entrevista.observaciones}</p>
-        <p><strong>Resultado:</strong> {candidato.entrevista.resultado}</p>
+        {candidato.entrevista.indicaciones && (
+  <p>
+    <strong>Indicaciones:</strong>{" "}
+    {candidato.entrevista.indicaciones}
+  </p>
+)}
+   
+   
+<p>
+  <strong>Estado de entrevista:</strong>{" "}
+  {candidato.entrevista.estadoEntrevista === "REALIZADA"
+    ? "Realizada"
+    : candidato.entrevista.estadoEntrevista === "CANCELADA"
+    ? "Cancelada"
+    : "Pendiente"}
+</p>
 
-
-
-
-
-{candidato.entrevista.documento && (
-  <div className="pc-documento-entrevista">
-    <p><strong>Documento de entrevista</strong></p>
-
-    <p>{candidato.entrevista.documento.name}</p>
+{(candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
+  "PENDIENTE" && (
+  <div className="pc-botones-oferta">
+    <button
+      type="button"
+      className="pc-boton-principal"
+      onClick={() => marcarEstadoEntrevista("REALIZADA")}
+    >
+      Marcar como realizada
+    </button>
 
     <button
       type="button"
-      onClick={() => {
-        const url = URL.createObjectURL(
-          candidato.entrevista.documento
-        );
+      onClick={() => marcarEstadoEntrevista("CANCELADA")}
+    >
+      Cancelar entrevista
+    </button>
+  </div>
+)}
 
-        window.open(url, "_blank", "noopener,noreferrer");
-      }}
+
+
+
+{candidato.entrevista.documentoArchivo && (
+  <div className="pc-documento-entrevista">
+    <p>
+      <strong>Documento de entrevista</strong>
+    </p>
+
+    <p>Archivo adjunto</p>
+
+    <button
+      type="button"
+      onClick={abrirDocumentoEntrevista}
     >
       Ver documento
     </button>
@@ -462,13 +903,20 @@ const avanzarEtapa = () => {
 )}
 
 
-        <button
-          type="button"
-          className="pc-boton-principal"
-          onClick={() => setEditandoEntrevista(true)}
-        >
-          Modificar entrevista
-        </button>
+
+
+       
+{(candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
+  "PENDIENTE" && (
+  <button
+    type="button"
+    className="pc-boton-principal"
+    onClick={() => setEditandoEntrevista(true)}
+  >
+    Modificar entrevista
+  </button>
+)}
+
       </div>
     ) : (
       <div>
@@ -530,6 +978,23 @@ const avanzarEtapa = () => {
           </select>
         </label>
 
+<label>
+  RESULTADO DE LA EVALUACIÓN
+  <select
+    value={evaluacion.resultado}
+    onChange={(e) =>
+      setEvaluacion({
+        ...evaluacion,
+        resultado: e.target.value,
+      })
+    }
+  >
+    <option value="PENDIENTE">Pendiente</option>
+    <option value="APROBADO">Aprobado</option>
+    <option value="REPROBADO">Reprobado</option>
+  </select>
+</label>
+
         <label>
           OBSERVACIONES
           <textarea
@@ -583,19 +1048,36 @@ const avanzarEtapa = () => {
             {candidato.evaluacion?.clasificacion ?? "Informativo"}
           </p>
 
+<p>
+  <strong>Resultado:</strong>{" "}
+  {candidato.evaluacion?.resultado === "APROBADO"
+    ? "Aprobado"
+    : candidato.evaluacion?.resultado === "REPROBADO"
+    ? "Reprobado"
+    : "Pendiente"}
+</p>
+
           <p>
             <strong>Observaciones:</strong>{" "}
             {candidato.evaluacion?.observaciones || "Sin observaciones"}
           </p>
         </div>
 
-        <button
-          type="button"
-          className="pc-boton-principal"
-          onClick={() => setEditandoEvaluacion(true)}
-        >
-          Modificar evaluación
-        </button>
+       <button
+       type="button"
+       className="pc-boton-principal"
+       disabled={
+      candidato.entrevista?.estadoEntrevista !== "REALIZADA"
+  }    
+      onClick={() => setEditandoEvaluacion(true)}
+>
+      Modificar evaluación
+      </button>
+      {candidato.entrevista?.estadoEntrevista !== "REALIZADA" && (
+  <p>
+    Primero debes realizar la entrevista para evaluar al candidato.
+  </p>
+)}
       </>
     )}
   </div>
@@ -704,6 +1186,7 @@ const avanzarEtapa = () => {
           <button
             type="button"
             onClick={() => setEditandoOferta(true)}
+            disabled={candidato.oferta?.estado !== "Pendiente"}
           >
             Modificar oferta
           </button>
@@ -752,26 +1235,252 @@ const avanzarEtapa = () => {
 )}
 
 
-            {paso === 5 && (
-              <div className="pc-contratacion">
-                <div className="pc-check">✓</div>
-                <h3>Continuar con la contratación</h3>
-                <p>
-                  Una vez aceptada la oferta, podremos registrar
-                  al candidato como empleado.
-                </p>
-                <button
+{paso === 5 && (
+  <div className="pc-contratacion">
+    <div className="pc-check">✓</div>
+
+    <h3>Decisión final del candidato</h3>
+
+    
+{candidato.estado === "Descartado" && (
+  <div
+    style={{
+      padding: "15px",
+      margin: "15px 0",
+      background: "#fff1f2",
+      borderRadius: "8px",
+      textAlign: "left",
+    }}
+  >
+    <strong>Motivo del descarte:</strong>
+    <p>{candidato.motivoDescarte || "No registrado"}</p>
+
+    {candidato.fechaDescarte && (
+      <small>
+        Fecha:{" "}
+        {new Date(candidato.fechaDescarte).toLocaleDateString(
+          "es-HN",
+          { timeZone: "America/Tegucigalpa" }
+        )}
+      </small>
+    )}
+  </div>
+)}
+
+
+    <p>
+      Selecciona si el candidato será contratado
+      o descartado del proceso de selección.
+    </p>
+
+    <div
+      style={{
+        display: "flex",
+        gap: "12px",
+        justifyContent: "center",
+        flexWrap: "wrap",
+      }}
+    >
+     
+<button
   type="button"
+  className="pc-boton-principal"
   disabled={
+    cargandoContratacion ||
+    guardandoContratacion ||
     candidato.estado !== "Oferta" ||
     candidato.oferta?.estado !== "Aceptada"
   }
-  onClick={registrarContratacion}
+  onClick={abrirFormularioContratacion}
 >
-                  Registrar como empleado
-                </button>
-              </div>
-            )}
+  {cargandoContratacion
+    ? "Cargando..."
+    : "Contratar candidato"}
+</button>
+
+
+      <button
+        type="button"
+        className="pc-boton-secundario"
+        disabled={
+  descartando ||
+  candidato.estado === "Contratado" ||
+  candidato.estado === "Descartado"
+}
+       onClick={registrarDescarte}
+      >
+        Descartar candidato
+      </button>
+    </div>
+  </div>
+)}
+
+
+{mostrarFormularioContratacion && (
+  <form
+    onSubmit={confirmarContratacion}
+    style={{
+      marginTop: "24px",
+      padding: "20px",
+      border: "1px solid #ddd",
+      borderRadius: "10px",
+      textAlign: "left",
+    }}
+  >
+    <h3>Registro de contratación</h3>
+    <p>Completa los datos para registrar al nuevo empleado.</p>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: "15px",
+        marginTop: "15px",
+      }}
+    >
+      <label>
+        Identidad
+        <input
+          type="text"
+          required
+          value={datosContratacion.identidad}
+          onChange={(e) =>
+            setDatosContratacion({
+              ...datosContratacion,
+              identidad: e.target.value,
+            })
+          }
+          placeholder="Número de identidad"
+        />
+      </label>
+
+      <label>
+        Teléfono
+        <input
+          type="tel"
+          required
+          value={datosContratacion.telefono}
+          onChange={(e) =>
+            setDatosContratacion({
+              ...datosContratacion,
+              telefono: e.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Correo electrónico
+        <input
+          type="email"
+          required
+          value={datosContratacion.correo}
+          onChange={(e) =>
+            setDatosContratacion({
+              ...datosContratacion,
+              correo: e.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Área
+        <select
+          required
+          value={datosContratacion.areaId}
+          onChange={(e) =>
+            setDatosContratacion({
+              ...datosContratacion,
+              areaId: e.target.value,
+              puestoId: "",
+            })
+          }
+        >
+          <option value="">Selecciona un área</option>
+          {areasContratacion.map((area) => (
+            <option key={area.id} value={area.id}>
+              {area.nombre}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
+        Puesto
+        <select
+          required
+          value={datosContratacion.puestoId}
+          disabled={!datosContratacion.areaId}
+          onChange={(e) =>
+            setDatosContratacion({
+              ...datosContratacion,
+              puestoId: e.target.value,
+            })
+          }
+        >
+          <option value="">Selecciona un puesto</option>
+          {(
+            areasContratacion.find(
+              (area) =>
+                String(area.id) === String(datosContratacion.areaId)
+            )?.puestos || []
+          ).map((puesto) => (
+            <option key={puesto.id} value={puesto.id}>
+              {puesto.nombre}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+
+    <p style={{ marginTop: "18px" }}>
+      <strong>Salario ofrecido:</strong>{" "}
+      L {Number(candidato.oferta?.salario || 0).toLocaleString("es-HN")}
+    </p>
+
+    <p>
+      <strong>Fecha de ingreso:</strong>{" "}
+      {candidato.oferta?.fechaInicio
+        ? new Date(candidato.oferta.fechaInicio).toLocaleDateString(
+            "es-HN",
+            { timeZone: "UTC" }
+          )
+        : "No registrada"}
+    </p>
+
+    <div
+      style={{
+        display: "flex",
+        gap: "12px",
+        marginTop: "20px",
+      }}
+    >
+      <button
+        type="submit"
+        className="pc-boton-principal"
+        disabled={guardandoContratacion}
+      >
+        {guardandoContratacion
+          ? "Registrando..."
+          : "Confirmar contratación"}
+      </button>
+
+      <button
+        type="button"
+        className="pc-boton-secundario"
+        disabled={guardandoContratacion}
+        onClick={() => setMostrarFormularioContratacion(false)}
+      >
+        Cancelar
+      </button>
+    </div>
+  </form>
+)}
+
+
+  
+
           </div>
 
           <div className="pc-acciones">
@@ -793,6 +1502,22 @@ const avanzarEtapa = () => {
               >
                 Cancelar
               </button>
+
+              
+{paso !== 5 &&
+  candidato.estado !== "Contratado" &&
+  candidato.estado !== "Descartado" && (
+    <button
+      type="button"
+      className="pc-boton-secundario"
+      disabled={descartando}
+      onClick={registrarDescarte}
+    >
+      {descartando ? "Descartando..." : "Descartar candidato"}
+    </button>
+  )}
+
+
 {etapasSeleccion.includes(candidato.estado) &&
   candidato.estado !== "Contratado" &&
   candidato.estado !== "Oferta" && (
