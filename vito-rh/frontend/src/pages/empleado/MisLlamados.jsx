@@ -1,0 +1,93 @@
+import { useEffect, useState } from "react";
+import { Alert, Badge, Button, Spinner, Table } from "react-bootstrap";
+import MainLayout from "../../layouts/MainLayout";
+import api from "../../services/api";
+
+const COLOR_GRAVEDAD = { Leve: "secondary", Moderado: "warning", Grave: "danger", Informativo: "info" };
+
+export default function MisLlamados() {
+  const [llamados, setLlamados] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .get("/resumen/llamados")
+      .then((r) => setLlamados(r.data))
+      .catch((err) => setError(err.response?.data?.mensaje || "No se pudieron cargar tus llamados."))
+      .finally(() => setCargando(false));
+  }, []);
+
+  async function firmar(id) {
+    setError("");
+    try {
+      await api.patch(`/resumen/llamados/${id}/firmar`);
+      const r = await api.get("/resumen/llamados");
+      setLlamados(r.data);
+    } catch (err) {
+      setError(err.response?.data?.mensaje || "No se pudo firmar el llamado.");
+    }
+  }
+
+  return (
+    <MainLayout>
+      <div>
+        <small className="text-muted">Portal del empleado — Vito Pizzería</small>
+        <h3 className="fw-bold mt-1 mb-3">Mis llamados de atención</h3>
+
+        {error && <Alert variant="danger">{error}</Alert>}
+
+        {cargando ? (
+          <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>
+        ) : (
+          <Table hover responsive className="align-middle">
+            <thead>
+              <tr>
+                <th>N.º LLAMADO</th>
+                <th>FECHA</th>
+                <th>TIPO</th>
+                <th>DESCRIPCIÓN</th>
+                <th>EMITIDO POR</th>
+                <th>FIRMADO</th>
+              </tr>
+            </thead>
+            <tbody>
+              {llamados.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center text-muted py-4">
+                    No tienes llamados de atención registrados.
+                  </td>
+                </tr>
+              ) : (
+                llamados.map((l) => (
+                  <tr key={l.id}>
+                    <td><Badge bg="dark">{l.numeroLlamado} de 4</Badge></td>
+                    <td><small className="font-monospace">{l.fecha.slice(0, 10)}</small></td>
+                    <td><Badge bg={COLOR_GRAVEDAD[l.tipoFalta] ?? "secondary"}>{l.tipoFalta}</Badge></td>
+                    <td><small className="text-muted">{l.descripcionFalta}</small></td>
+                    <td>{l.emisor?.username ?? "—"}</td>
+                    <td>
+                      {l.firmadoEmpleado ? (
+                        <small className="text-success">Firmado {l.fechaFirma?.slice(0, 10)}</small>
+                      ) : (
+                        <Button size="sm" variant="outline-danger" onClick={() => firmar(l.id)}>
+                          Firmar
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        )}
+
+        {llamados.length >= 3 && (
+          <Alert variant="warning" className="mt-3">
+            Tienes {llamados.length} llamados de atención. Al llegar a 4 se permite el despido justificado.
+          </Alert>
+        )}
+      </div>
+    </MainLayout>
+  );
+}

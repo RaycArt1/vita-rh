@@ -141,6 +141,7 @@ model Empleado {
   descansos Descanso[]
   llamados     LlamadoAtencion[]
   nominas      Nomina[]
+  reportes       ReporteIncidencia[]
 }
 
 model Usuario {
@@ -263,6 +264,7 @@ model LlamadoAtencion {
   fecha            DateTime
   numeroLlamado    Int      // 1 a 4 (RN-012). Validar en el servicio
   firmadoEmpleado  Boolean  @default(false)
+  fechaFirma       DateTime?
   empleadoId       Int
   emisorId         Int
 
@@ -301,6 +303,9 @@ model ReporteIncidencia {
   seguimiento  String?
   documentoUrl String?
   createdAt    DateTime @default(now())
+
+  empleadoId     Int?
+  empleado_rel   Empleado? @relation(fields: [empleadoId], references: [id])
 }
 
 // ===================== NOTIFICACIONES Y AUDITORÍA =====================

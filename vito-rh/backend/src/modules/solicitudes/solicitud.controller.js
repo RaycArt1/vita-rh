@@ -24,7 +24,8 @@ export async function obtenerSolicitudes(req, res) {
 
 export async function crearSolicitud(req, res) {
   try {
-    const { empleadoId, tipoSolicitud, fechaInicio, fechaFin, motivo } = req.body;
+    const empleadoId = req.usuario?.empleadoId ?? req.body.empleadoId;
+    const { tipoSolicitud, fechaInicio, fechaFin, motivo } = req.body;
 
     if (!empleadoId || !tipoSolicitud || !fechaInicio || !fechaFin) {
       return res.status(400).json({ mensaje: "Faltan campos obligatorios" });
@@ -222,6 +223,19 @@ export async function editarSolicitud(req, res) {
     });
 
     res.json(solicitud);
+  } catch (error) {
+    errorServidor(res, error);
+  }
+}
+export async function obtenerSolicitudesEmpleado(req, res) {
+  try {
+    const empleadoId = req.usuario?.empleadoId;
+    if (!empleadoId) {
+      return res.status(403).json({ mensaje: "Tu usuario no está asociado a un empleado" });
+    }
+
+    const solicitudes = await solicitudService.obtenerSolicitudesDeEmpleado(empleadoId);
+    res.json(solicitudes);
   } catch (error) {
     errorServidor(res, error);
   }

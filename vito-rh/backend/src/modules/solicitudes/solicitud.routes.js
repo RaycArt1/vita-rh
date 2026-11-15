@@ -6,6 +6,7 @@ const router = Router();
 
 router.get("/", verificarToken, solicitudController.obtenerSolicitudes);
 router.post("/", verificarToken, solicitudController.crearSolicitud);
+router.get("/empleado", verificarToken, solicitudController.obtenerSolicitudesEmpleado);
 router.patch("/:id/estado", verificarToken, solicitudController.cambiarEstado);
 router.put("/:id", verificarToken, solicitudController.editarSolicitud);
 

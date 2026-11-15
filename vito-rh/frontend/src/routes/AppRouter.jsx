@@ -14,6 +14,10 @@ import RestablecerContrasena from "../pages/RestablecerContrasena";
 import Mantenimiento from "../pages/Mantenimiento"; 
 import ReportesPage from "../pages/ReportesPage"; // <--- Nueva importación para el módulo de reportes
 import Bitacora from "../pages/Bitacora";
+import MiResumen from "../pages/empleado/MiResumen";
+import MisSolicitudes from "../pages/empleado/MisSolicitudes";
+import MisLlamados from "../pages/empleado/MisLlamados";
+import MiPerfil from "../pages/empleado/MiPerfil";
 
 export default function AppRouter() {
   return (
@@ -34,6 +38,11 @@ export default function AppRouter() {
       <Route path="/mantenimiento" element={<Mantenimiento />} />
       <Route path="/reportes" element={<ReportesPage />} /> {/* <--- Nueva ruta para Reportes e Incidencias */}
       <Route path="/bitacora" element={<Bitacora />} />
+      <Route path="/resumen" element={<MiResumen />} />
+      <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
+      <Route path="/mis-llamados" element={<MisLlamados />} />
+      <Route path="/mi-perfil" element={<MiPerfil />} />
+  
     </Routes>
   );
 }
