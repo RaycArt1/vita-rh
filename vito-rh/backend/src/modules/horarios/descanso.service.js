@@ -1,4 +1,3 @@
-
 import prisma from "../../config/prisma.js";
 
 function obtenerFechaDia(valor) {
@@ -70,11 +69,42 @@ export async function asignarDescanso(data) {
 
   const empleado = await prisma.empleado.findUnique({
     where: { id: empleadoId },
-    select: { id: true, estado: true },
+    select: {
+      id: true,
+      areaId: true,
+      estado: true,
+    },
   });
 
   if (!empleado || empleado.estado !== "ACTIVO") {
     throw new Error("El empleado no existe o está inactivo.");
+  }
+
+  // La restricción de lunes a jueves corresponde al generador automático.
+  // La asignación manual del administrador permite descansos cualquier día.
+
+  const descansoArea = await prisma.descanso.findFirst({
+    where: {
+      fecha,
+      empleadoId: { not: empleadoId },
+      empleado: {
+        areaId: empleado.areaId,
+      },
+    },
+    include: {
+      empleado: {
+        select: {
+          nombres: true,
+          apellidos: true,
+        },
+      },
+    },
+  });
+
+  if (descansoArea) {
+    throw new Error(
+      `Otra persona de esta área ya tiene descanso asignado ese día: ${descansoArea.empleado.nombres} ${descansoArea.empleado.apellidos}.`
+    );
   }
 
   return prisma.descanso.upsert({
