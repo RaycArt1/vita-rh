@@ -77,3 +77,12 @@ export async function actualizarSolicitud(id, datos) {
     },
   });
 }
+export async function obtenerSolicitudesDeEmpleado(empleadoId) {
+  return prisma.solicitud.findMany({
+    where: { empleadoId },
+    include: {
+      empleado: { include: { puesto: { include: { area: true } } } },
+    },
+    orderBy: { fechaSolicitud: "desc" },
+  });
+}

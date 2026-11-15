@@ -37,6 +37,7 @@ export function verificarToken(req, res, next) {
       id: Number(usuario.id),
       username: usuario.username,
       rol: usuario.rol,
+      empleadoId: usuario.empleadoId,
     };
 
     next();

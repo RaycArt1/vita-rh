@@ -10,6 +10,7 @@ import reportesRoutes from "../modules/reportes/reportes.routes.js";
 import reclutamientoRoutes from "../modules/reclutamiento/reclutamiento.routes.js";
 import solicitudRoutes from "../modules/solicitudes/solicitud.routes.js";
 import bitacoraRoutes from "../modules/bitacora/bitacora.routes.js";
+import resumenRoutes from "../modules/resumen/resumen.routes.js";
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use("/reportes", reportesRoutes);
 router.use("/reclutamiento", reclutamientoRoutes);
 router.use("/solicitudes", solicitudRoutes);
 router.use("/bitacora", bitacoraRoutes);
+router.use("/resumen", resumenRoutes);
 
 router.get("/", (req, res) => {
   res.json({
