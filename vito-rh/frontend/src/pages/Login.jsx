@@ -66,6 +66,8 @@ export default function Login() {
 
       if (rol === "CHEF") {
         navigate("/chef/dashboard", { replace: true });
+      } else if (rol === "EMPLEADO") {
+        navigate("/resumen", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }

@@ -18,6 +18,7 @@ const TABLAS = [
   { valor: "Solicitud", etiqueta: "Solicitudes" },
   { valor: "Empleado", etiqueta: "Empleados" },
   { valor: "Role", etiqueta: "Roles" },
+  { valor: "ReporteIncidencia", etiqueta: "Reportes" },
 ];
 
 const COLOR_ACCION = { INSERT: "success", UPDATE: "warning", DELETE: "danger" };
@@ -31,6 +32,7 @@ const ETIQUETA_TABLA = {
   Solicitud: "Solicitud",
   Empleado: "Empleado",
   Role: "Rol",
+  ReporteIncidencia: "Reporte"
 };
 
 const FILTROS_INICIALES = { desde: "", hasta: "", accion: "", tabla: "" };

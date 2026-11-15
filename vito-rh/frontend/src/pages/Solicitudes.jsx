@@ -3,14 +3,6 @@ import { Alert, Badge, Button, Form, Modal, Spinner, Table } from "react-bootstr
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 
-const FORMULARIO_INICIAL = {
-  empleadoId: "",
-  tipo: "VACACION",
-  desde: "",
-  hasta: "",
-  motivo: "",
-};
-
 const ETIQUETA_ESTADO = {
   PENDIENTE: "Pendiente",
   APROBADA: "Aprobada",
@@ -54,21 +46,12 @@ function mensajeError(err, alternativo) {
 
 export default function Solicitudes() {
   const [solicitudes, setSolicitudes] = useState([]);
-  const [empleados, setEmpleados] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
-  const [vistaEmpleado, setVistaEmpleado] = useState(false);
-
-  const [mostrarModal, setMostrarModal] = useState(false);
-  const [solicitudEditando, setSolicitudEditando] = useState(null);
-  const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
-  const [guardando, setGuardando] = useState(false);
-  const [errorFormulario, setErrorFormulario] = useState("");
-
   const [detalle, setDetalle] = useState(null);
 
   async function cargarSolicitudes() {
@@ -79,14 +62,8 @@ export default function Solicitudes() {
   async function cargarDatos() {
     setCargando(true);
     setError("");
-
     try {
-      const [respSolicitudes, respEmpleados] = await Promise.all([
-        api.get("/solicitudes"),
-        api.get("/empleados"),
-      ]);
-      setSolicitudes(respSolicitudes.data.map(adaptarSolicitud));
-      setEmpleados(respEmpleados.data);
+      await cargarSolicitudes();
     } catch (err) {
       console.error(err);
       setError(mensajeError(err, "No se pudieron cargar las solicitudes."));
@@ -99,17 +76,19 @@ export default function Solicitudes() {
     cargarDatos();
   }, []);
 
-  // Vista empleado: temporal, hasta conectar el usuario logueado
-  const base = vistaEmpleado
-    ? solicitudes.filter((s) => s.nombre === "Juan Pérez")
-    : solicitudes;
+  const pendientes = solicitudes.filter((s) => s.estado === "PENDIENTE").length;
+  const aprobadas = solicitudes.filter((s) => s.estado === "APROBADA").length;
+  const rechazadas = solicitudes.filter((s) => s.estado === "RECHAZADA").length;
 
-  const pendientes = base.filter((s) => s.estado === "PENDIENTE").length;
-  const aprobadas = base.filter((s) => s.estado === "APROBADA").length;
-  const rechazadas = base.filter((s) => s.estado === "RECHAZADA").length;
+  const tarjetas = [
+    { etiqueta: "Pendientes", valor: pendientes, color: "warning" },
+    { etiqueta: "Aprobadas", valor: aprobadas, color: "success" },
+    { etiqueta: "Rechazadas", valor: rechazadas, color: "danger" },
+    { etiqueta: "Total", valor: solicitudes.length, color: "secondary" },
+  ];
 
   const termino = busqueda.trim().toLowerCase();
-  const filtradas = base.filter((s) => {
+  const filtradas = solicitudes.filter((s) => {
     const coincideBusqueda =
       s.nombre.toLowerCase().includes(termino) ||
       s.puesto.toLowerCase().includes(termino) ||
@@ -123,7 +102,6 @@ export default function Solicitudes() {
   async function cambiarEstado(id, estado) {
     setError("");
     setAviso("");
-
     try {
       await api.patch(`/solicitudes/${id}/estado`, { estado });
       setAviso(estado === "APROBADA" ? "Solicitud aprobada." : "Solicitud rechazada.");
@@ -134,94 +112,13 @@ export default function Solicitudes() {
     }
   }
 
-  function abrirNuevo() {
-    setSolicitudEditando(null);
-    setFormulario(FORMULARIO_INICIAL);
-    setErrorFormulario("");
-    setAviso("");
-    setMostrarModal(true);
-  }
-
-  function abrirEdicion(s) {
-    setSolicitudEditando(s);
-    setFormulario({
-      empleadoId: "",
-      tipo: s.tipo,
-      desde: s.desde,
-      hasta: s.hasta,
-      motivo: s.motivo,
-    });
-    setErrorFormulario("");
-    setMostrarModal(true);
-  }
-
-  function cambiarCampo(evento) {
-    const { name, value } = evento.target;
-    setFormulario((actual) => ({ ...actual, [name]: value }));
-  }
-
-  async function guardarSolicitud(evento) {
-    evento.preventDefault();
-    setErrorFormulario("");
-    if (formulario.desde && formulario.hasta && formulario.hasta < formulario.desde) {
-    setErrorFormulario("La fecha de inicio no puede ser posterior a la fecha de fin. Revisa las fechas.");
-    return;
-  }
-    setGuardando(true);
-
-    const datos = {
-      tipoSolicitud: formulario.tipo,
-      fechaInicio: formulario.desde,
-      fechaFin: formulario.hasta,
-      motivo: formulario.motivo.trim() || null,
-    };
-
-    try {
-      if (solicitudEditando) {
-        await api.put(`/solicitudes/${solicitudEditando.id}`, datos);
-        setAviso("Solicitud actualizada correctamente.");
-      } else {
-        await api.post("/solicitudes", {
-          ...datos,
-          empleadoId: Number(formulario.empleadoId),
-        });
-        setAviso("Solicitud registrada correctamente.");
-      }
-
-      setMostrarModal(false);
-      setSolicitudEditando(null);
-      await cargarSolicitudes();
-    } catch (err) {
-      console.error(err);
-      setErrorFormulario(mensajeError(err, "No se pudo guardar la solicitud."));
-    } finally {
-      setGuardando(false);
-    }
-  }
-
-  const tarjetas = [
-    { etiqueta: "Pendientes", valor: pendientes, color: "warning" },
-    { etiqueta: "Aprobadas", valor: aprobadas, color: "success" },
-    { etiqueta: "Rechazadas", valor: rechazadas, color: "danger" },
-    { etiqueta: "Total", valor: base.length, color: "secondary" },
-  ];
-
   return (
     <MainLayout>
       <div>
         <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
           <div>
-            <small className="text-muted">Gestión de Solicitudes — Vito Pizzería</small>
+            <small className="text-muted">Revisión de solicitudes — Vito Pizzería</small>
             <h3 className="fw-bold mt-1 mb-0">Vacaciones y Permisos</h3>
-          </div>
-
-          <div className="d-flex gap-2">
-            <Button variant="outline-secondary" onClick={() => setVistaEmpleado(!vistaEmpleado)}>
-              {vistaEmpleado ? "← Vista administrador" : "Vista empleado"}
-            </Button>
-            <Button variant="danger" onClick={abrirNuevo}>
-              + Nueva solicitud
-            </Button>
           </div>
         </div>
 
@@ -329,26 +226,21 @@ export default function Solicitudes() {
                         </td>
 
                         <td>
-                          {!vistaEmpleado && (
-                            <div className="d-flex gap-2 flex-wrap">
-                              <Button size="sm" variant="outline-primary" onClick={() => setDetalle(s)}>
-                                Ver
-                              </Button>
-                              {s.estado === "PENDIENTE" && (
-                                <>
-                                  <Button size="sm" variant="outline-secondary" onClick={() => abrirEdicion(s)}>
-                                    Editar
-                                  </Button>
-                                  <Button size="sm" variant="outline-success" onClick={() => cambiarEstado(s.id, "APROBADA")}>
-                                    Aprobar
-                                  </Button>
-                                  <Button size="sm" variant="outline-danger" onClick={() => cambiarEstado(s.id, "RECHAZADA")}>
-                                    Rechazar
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          )}
+                          <div className="d-flex gap-2 flex-wrap">
+                            <Button size="sm" variant="outline-primary" onClick={() => setDetalle(s)}>
+                              Ver
+                            </Button>
+                            {s.estado === "PENDIENTE" && (
+                              <>
+                                <Button size="sm" variant="outline-success" onClick={() => cambiarEstado(s.id, "APROBADA")}>
+                                  Aprobar
+                                </Button>
+                                <Button size="sm" variant="outline-danger" onClick={() => cambiarEstado(s.id, "RECHAZADA")}>
+                                  Rechazar
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -359,88 +251,6 @@ export default function Solicitudes() {
           )}
         </div>
       </div>
-
-      <Modal show={mostrarModal} onHide={() => !guardando && setMostrarModal(false)} centered>
-        <Form onSubmit={guardarSolicitud}>
-          
-          <Modal.Header closeButton={!guardando}>
-            <Modal.Title>{solicitudEditando ? "Editar solicitud" : "Nueva solicitud"}</Modal.Title>
-          </Modal.Header>
-
-          <Modal.Body>
-            {errorFormulario && <Alert variant="danger">{errorFormulario}</Alert>}
-
-            <div className="row g-3">
-              {!solicitudEditando && (
-                <Form.Group className="col-12">
-                  <Form.Label>Empleado *</Form.Label>
-                  <Form.Select name="empleadoId" value={formulario.empleadoId} onChange={cambiarCampo} required>
-                    <option value="">Selecciona un empleado</option>
-                    {empleados.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.nombres} {emp.apellidos}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              )}
-
-              <Form.Group className="col-12">
-                <Form.Label>Tipo *</Form.Label>
-                <Form.Select name="tipo" value={formulario.tipo} onChange={cambiarCampo} required>
-                  <option value="VACACION">Vacaciones</option>
-                  <option value="PERMISO">Permiso</option>
-                  <option value="INCAPACIDAD">Incapacidad</option>
-                </Form.Select>
-              </Form.Group>
-
-              <Form.Group className="col-md-6">
-                <Form.Label>Desde *</Form.Label>
-                <Form.Control name="desde" type="date" value={formulario.desde} onChange={cambiarCampo} required />
-              </Form.Group>
-
-              <Form.Group className="col-md-6">
-                <Form.Label>Hasta *</Form.Label>
-                <Form.Control name="hasta" type="date" value={formulario.hasta} onChange={cambiarCampo} required />
-              </Form.Group>
-
-              <Form.Group className="col-12">
-                <Form.Label>Observación</Form.Label>
-                <Form.Control
-                  name="motivo"
-                  as="textarea"
-                  rows={3}
-                  value={formulario.motivo}
-                  onChange={cambiarCampo}
-                  maxLength={500}
-                />
-              </Form.Group>
-            </div>
-
-            <small className="d-block text-muted mt-3">
-              Los campos marcados con * son obligatorios. Las vacaciones deben solicitarse con al menos una semana de anticipación.
-            </small>
-          </Modal.Body>
-
-          <Modal.Footer>
-            <Button variant="outline-secondary" onClick={() => setMostrarModal(false)} disabled={guardando}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="danger" disabled={guardando}>
-              {guardando ? (
-                <>
-                  <Spinner size="sm" className="me-2" />
-                  Guardando...
-                </>
-              ) : solicitudEditando ? (
-                "Guardar cambios"
-              ) : (
-                "Registrar solicitud"
-              )}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
 
       <Modal show={Boolean(detalle)} onHide={() => setDetalle(null)} centered>
         <Modal.Header closeButton>
