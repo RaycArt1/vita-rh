@@ -593,3 +593,70 @@
     text-align: right;
   }
 }
+
+/* COLORES ACTUALIZADOS DE LOS TURNOS */
+.weekly-calendar .assignment-select.turno-1 {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border: 1px solid #86efac !important;
+}
+
+.weekly-calendar .assignment-select.turno-2 {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #93c5fd !important;
+}
+
+.weekly-calendar .assignment-select.descanso {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+.weekly-calendar .assignment-select.sin-asignar {
+  background-color: #e5e7eb !important;
+  color: #374151 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* Puntos de la leyenda */
+.weekly-calendar .legend-dot.turno-1 {
+  background: #22c55e !important;
+}
+
+.weekly-calendar .legend-dot.turno-2 {
+  background: #3b82f6 !important;
+}
+
+.weekly-calendar .legend-dot.descanso {
+  background: #ef4444 !important;
+}
+
+.weekly-calendar .legend-dot.sin-asignar {
+  background: #9ca3af !important;
+}
+
+/* Colores equivalentes al exportar el calendario a PDF */
+.weekly-calendar-print .print-turno-1 {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  border: 1px solid #86efac !important;
+}
+
+.weekly-calendar-print .print-turno-2 {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #93c5fd !important;
+}
+
+.weekly-calendar-print .print-descanso {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+.weekly-calendar-print .print-sin-asignar {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  border: 1px solid #cbd5e1 !important;
+}

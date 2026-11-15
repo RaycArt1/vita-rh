@@ -73,6 +73,7 @@ export default function Calendar() {
   const [vistaPrevia, setVistaPrevia] = useState(null);
   const [guardandoPlanificacion, setGuardandoPlanificacion] = useState(false);
   const [mensajeExito, setMensajeExito] = useState("");
+  const [mensajeAsignacion, setMensajeAsignacion] = useState(null);
 
   const dias = useMemo(
     () =>
@@ -168,6 +169,7 @@ export default function Calendar() {
       setGuardando(clave);
       setError("");
       setMensajeExito("");
+      setMensajeAsignacion(null);
 
       await api.put("/horarios/asignacion", {
         empleadoId: empleado.id,
@@ -177,11 +179,20 @@ export default function Calendar() {
 
       await cargarDatos();
     } catch (err) {
-      setError(
+      const mensaje = 
         err.response?.data?.mensaje ||
-          err.message ||
-          "No se pudo guardar la asignación."
-      );
+        err.message ||
+        "No se pudo guardar la asignación.";
+
+      let mensajeAmigable = mensaje;
+
+      if (mensaje.includes("Otra persona de esta área ya tiene descanso asignado")) {
+        mensajeAmigable = `${mensaje} En esta área solo se permite una persona descansando por día. Elegí otro día para este empleado.`;
+      } else if (mensaje.includes("No se pueden asignar descansos los viernes")) {
+        mensajeAmigable = "Los descansos solo se pueden asignar de lunes a jueves. Elegí uno de esos días.";
+      }
+
+      setMensajeAsignacion({ clave, texto: mensajeAmigable });
 
       await cargarDatos();
     } finally {
@@ -260,25 +271,16 @@ export default function Calendar() {
     }
   }
 
-  const empleadosFiltrados = empleados.filter((empleado) =>
-    nombreEmpleado(empleado).toLowerCase().includes(filtro.toLowerCase())
-  );
+  const empleadosFiltrados = empleados.filter((empleado) => {
+    const rol = empleado.usuario?.role?.nombre?.toUpperCase();
 
-  const alertas = vistaPrevia?.alertas ?? [];
+    return (
+      rol !== "ADMINISTRADOR" &&
+      nombreEmpleado(empleado).toLowerCase().includes(filtro.toLowerCase())
+    );
+  });
+
   const conflictos = vistaPrevia?.conflictos ?? [];
-  const alertasCobertura = vistaPrevia?.alertasCobertura ?? [];
-
-  const cantidadPreventivas = alertas.filter(
-    (a) => a.nivel === "PREVENTIVA"
-  ).length;
-
-  const cantidadInformativas = alertas.filter(
-    (a) => a.nivel === "INFORMATIVA"
-  ).length;
-
-  const cantidadCriticas = alertas.filter(
-    (a) => a.nivel === "CRITICA"
-  ).length;
 
 
   
@@ -493,6 +495,12 @@ export default function Calendar() {
                               role="status"
                             />
                           )}
+
+                          {mensajeAsignacion?.clave === clave && (
+                            <div className="text-danger small mt-1" role="alert">
+                              {mensajeAsignacion.texto}
+                            </div>
+                          )}
                         </td>
                       );
                     })}
@@ -697,7 +705,7 @@ export default function Calendar() {
           {vistaPrevia && (
             <div className="mt-4">
               <Alert variant="success">
-                <strong>Vista previa generada correctamente.</strong>
+                <strong>Planificacion del mes generada correctamente.</strong>
 
                 <div>
                   Empleados: {vistaPrevia.empleados} | Días:{" "}
@@ -705,93 +713,6 @@ export default function Calendar() {
                   {vistaPrevia.totalAsignaciones}
                 </div>
               </Alert>
-
-              {/* RESUMEN DE ALERTAS */}
-              <div className="planning-alert-summary mb-3">
-                <h6>Resumen de alertas</h6>
-
-                <div className="d-flex flex-wrap gap-2">
-                  <span className="badge bg-warning text-dark">
-                    Preventivas: {cantidadPreventivas}
-                  </span>
-
-                  <span className="badge bg-info text-dark">
-                    Informativas: {cantidadInformativas}
-                  </span>
-
-                  <span className="badge bg-danger">
-                    Críticas: {cantidadCriticas}
-                  </span>
-
-                  <span className="badge bg-secondary">
-                    Conflictos: {conflictos.length}
-                  </span>
-                </div>
-              </div>
-
-              {/* DETALLE DE ALERTAS */}
-              {alertas.length > 0 && (
-                <>
-                  <h6>Detalle de jornadas consecutivas</h6>
-
-                  <div className="table-responsive">
-                    <table className="table table-sm table-bordered align-middle">
-                      <thead>
-                        <tr>
-                          <th>Empleado</th>
-                          <th>Días consecutivos</th>
-                          <th>Desde</th>
-                          <th>Hasta</th>
-                          <th>Nivel</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {alertas.map((alerta, indice) => (
-                          <tr key={`${alerta.empleadoId}-${indice}`}>
-                            <td>{alerta.empleado}</td>
-
-                            <td>{alerta.diasConsecutivos}</td>
-
-                            <td>{alerta.fechaInicio}</td>
-
-                            <td>{alerta.fechaFin}</td>
-
-                            <td>
-                              <span
-                                className={`badge ${
-                                  alerta.nivel === "CRITICA"
-                                    ? "bg-danger"
-                                    : alerta.nivel === "INFORMATIVA"
-                                      ? "bg-info text-dark"
-                                      : "bg-warning text-dark"
-                                }`}
-                              >
-                                {alerta.nivel}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-
-              {/* CONFLICTOS */}
-              {conflictos.length > 0 && (
-                <Alert variant="danger">
-                  <strong>Conflictos detectados:</strong>
-
-                  <ul className="mb-0 mt-2">
-                    {conflictos.map((conflicto, indice) => (
-                      <li key={indice}>
-                        {conflicto.empleado}: {conflicto.mensaje}
-                      </li>
-                    ))}
-                  </ul>
-                </Alert>
-              )}
 
               {/* BOTONES DE CONFIRMACIÓN */}
               <div className="d-flex flex-wrap justify-content-end gap-2 mt-4">
@@ -824,11 +745,6 @@ export default function Calendar() {
                 </button>
               </div>
 
-              {conflictos.length === 0 && (
-                <small className="text-muted d-block mt-2 text-end">
-                  Las alertas son informativas y no impiden guardar.
-                </small>
-              )}
             </div>
           )}
         </div>
