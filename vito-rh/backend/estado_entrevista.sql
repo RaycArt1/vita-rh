@@ -1,0 +1,2 @@
+ ALTER TABLE "Entrevista"
+ADD COLUMN "estadoEntrevista" TEXT NOT NULL DEFAULT 'PENDIENTE'; 

@@ -48,3 +48,23 @@ export function verificarToken(req, res, next) {
     });
   }
 }
+
+export function permitirRoles(...rolesPermitidos) {
+  return (req, res, next) => {
+    if (!req.usuario) {
+      return res.status(401).json({
+        success: false,
+        mensaje: "Debes iniciar sesión.",
+      });
+    }
+
+    if (!rolesPermitidos.includes(req.usuario.rol)) {
+      return res.status(403).json({
+        success: false,
+        mensaje: "No tienes permisos para realizar esta operación.",
+      });
+    }
+
+    next();
+  };
+}
