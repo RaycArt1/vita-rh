@@ -1,0 +1,10 @@
+-- CreateTable
+CREATE TABLE "Vacante" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "nombre" TEXT NOT NULL,
+    "descripcion" TEXT NOT NULL,
+    "areaId" INTEGER NOT NULL,
+    "activa" BOOLEAN NOT NULL DEFAULT true,
+    "fechaCreacion" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Vacante_areaId_fkey" FOREIGN KEY ("areaId") REFERENCES "Area" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);

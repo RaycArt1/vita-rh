@@ -7,25 +7,12 @@ import {
   crearCandidato,
   obtenerCandidatos,
   actualizarEstadoCandidato,
+  obtenerVacantes,
+  crearVacante,
+  obtenerAreas,
 } from "../services/reclutamientoService";
 
 
-
-const vacantesIniciales = [
-  {
-    id: 1,
-    area: "Cocina",
-    nombre: "Pizzero",
-    descripcion: "Preparación de pizzas artesanales y manejo de horno.",
-  },
-  {
-    id: 2,
-    area: "Servicio",
-    nombre: "Mesero",
-    descripcion: "Atención de mesa y experiencia al cliente.",
-  },
-
-];
 
 const candidatosIniciales = [
   {
@@ -73,7 +60,26 @@ const etapas = [
 ];
 
 export default function Reclutamiento() {
-const [vacantes, setVacantes] = useState(vacantesIniciales);
+const [vacantes, setVacantes] = useState([]);
+const [areas, setAreas] = useState([]);
+const [guardandoVacante, setGuardandoVacante] = useState(false);
+
+useEffect(() => {
+  const cargarVacantesYAreas = async () => {
+    try {
+      const [vacantesGuardadas, areasGuardadas] = await Promise.all([
+        obtenerVacantes(),
+        obtenerAreas(),
+      ]);
+      setVacantes(vacantesGuardadas);
+      setAreas(areasGuardadas);
+    } catch (error) {
+      console.error("Error al cargar vacantes o áreas:", error);
+    }
+  };
+
+  cargarVacantesYAreas();
+}, []);
 const [candidatos, setCandidatos] = useState([]);
 const [vistaCandidatos, setVistaCandidatos] = useState("En proceso");
 useEffect(() => {
@@ -284,34 +290,48 @@ const [mostrarFormularioVacante, setMostrarFormularioVacante] = useState(false);
 
 const [nuevaVacante, setNuevaVacante] = useState({
   nombre: "",
-  area: "Cocina",
+  areaId: "",
   descripcion: "",
 });
 
-const guardarVacante = (evento) => {
+const guardarVacante = async (evento) => {
   evento.preventDefault();
 
-  if (!nuevaVacante.nombre.trim() || !nuevaVacante.descripcion.trim()) {
+  if (
+    !nuevaVacante.nombre.trim() ||
+    !nuevaVacante.descripcion.trim() ||
+    !nuevaVacante.areaId
+  ) {
     return;
   }
 
-  setVacantes((anteriores) => [
-    ...anteriores,
-    {
-      id: Date.now(),
+  try {
+    setGuardandoVacante(true);
+
+    const vacanteCreada = await crearVacante({
       nombre: nuevaVacante.nombre.trim(),
-      area: nuevaVacante.area,
+      areaId: Number(nuevaVacante.areaId),
       descripcion: nuevaVacante.descripcion.trim(),
-    },
-  ]);
+    });
 
-  setNuevaVacante({
-    nombre: "",
-    area: "Cocina",
-    descripcion: "",
-  });
+    setVacantes((anteriores) => [vacanteCreada, ...anteriores]);
 
-  setMostrarFormularioVacante(false);
+    setNuevaVacante({
+      nombre: "",
+      areaId: "",
+      descripcion: "",
+    });
+
+    setMostrarFormularioVacante(false);
+  } catch (error) {
+    console.error("Error al guardar vacante:", error);
+    alert(
+      error.response?.data?.mensaje ||
+        "No se pudo guardar la vacante. Revisa la conexión con el backend."
+    );
+  } finally {
+    setGuardandoVacante(false);
+  }
 };
 
   const candidatosActivos = candidatos.filter(
@@ -363,7 +383,7 @@ const guardarVacante = (evento) => {
         {vacantes.map((vacante) => (
           <article className="reclutamiento-vacante" key={vacante.id}>
             <span className="reclutamiento-etiqueta">
-              {vacante.area}
+              {vacante.area?.nombre}
             </span>
             <h3>{vacante.nombre}</h3>
             <p>{vacante.descripcion}</p>
@@ -531,18 +551,21 @@ const guardarVacante = (evento) => {
         <label htmlFor="vacante-area">ÁREA</label>
         <select
           id="vacante-area"
-          value={nuevaVacante.area}
+          required
+          value={nuevaVacante.areaId}
           onChange={(evento) =>
             setNuevaVacante({
               ...nuevaVacante,
-              area: evento.target.value,
+              areaId: evento.target.value,
             })
           }
         >
-          <option value="Cocina">Cocina</option>
-          <option value="Servicio">Servicio</option>
-          <option value="Domicilios">Domicilios</option>
-          <option value="Administración">Administración</option>
+          <option value="">Selecciona un área</option>
+          {areas.map((area) => (
+            <option key={area.id} value={area.id}>
+              {area.nombre}
+            </option>
+          ))}
         </select>
 
         <label htmlFor="vacante-descripcion">DESCRIPCIÓN</label>
@@ -568,8 +591,12 @@ const guardarVacante = (evento) => {
             Cancelar
           </button>
 
-          <button type="submit" className="reclutamiento-btn-principal">
-            Guardar vacante
+          <button
+            type="submit"
+            className="reclutamiento-btn-principal"
+            disabled={guardandoVacante}
+          >
+            {guardandoVacante ? "Guardando..." : "Guardar vacante"}
           </button>
         </div>
       </form>

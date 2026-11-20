@@ -167,7 +167,20 @@ export const contratarCandidato = async (candidatoId, datos) => {
 };
 
 
+export const obtenerVacantes = async () => {
+  const { data } = await api.get("/reclutamiento/vacantes");
+  return data;
+};
 
+export const crearVacante = async (datos) => {
+  const { data } = await api.post("/reclutamiento/vacantes", datos);
+  return data;
+};
+
+export const obtenerAreas = async () => {
+  const { data } = await api.get("/empleados/catalogos/areas");
+  return data;
+};
 
 
 
