@@ -20,10 +20,14 @@ import {
 } from "./reclutamiento.controller.js";
 
 import { subirDocumentoEntrevista } from "../../uploadEntrevista.js";
+import { obtenerVacantes, crearVacante } from "./vacantes.controller.js"
 
 
 const router = Router();
 
+// Vacantes (van antes de las rutas con :id)
+router.get("/vacantes", verificarToken, permitirRoles("ADMINISTRADOR"), obtenerVacantes);
+router.post("/vacantes", verificarToken, permitirRoles("ADMINISTRADOR"), crearVacante);
 
 router.post("/", subirCV.single("cv"), crearCandidato);
 router.get("/", verificarToken, permitirRoles("ADMINISTRADOR"), obtenerCandidatos);

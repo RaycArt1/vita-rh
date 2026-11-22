@@ -99,6 +99,7 @@ model Area {
   puestos     Puesto[]
   empleados   Empleado[]
   horarios    Horario[]
+  vacantes    Vacante[]
 }
 
 model Puesto {
@@ -184,6 +185,18 @@ model Expediente {
 }
 
 // ===================== RECLUTAMIENTO =====================
+
+// Vacantes publicadas desde el módulo de reclutamiento
+model Vacante {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  descripcion   String
+  areaId        Int
+  activa        Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
+
+  area          Area     @relation(fields: [areaId], references: [id])
+}
 
 model Candidato {
   id             Int             @id @default(autoincrement())
