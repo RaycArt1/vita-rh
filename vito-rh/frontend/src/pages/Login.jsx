@@ -1,19 +1,7 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 import "./Login.css";
-
-const accesosDemo = [
-  { rol: "Administrador", usuario: "admin", correo: "admin@vito.com" },
-  { rol: "Chef de cocina", usuario: "chef", correo: "chef@vito.com" },
-  { rol: "Empleado", usuario: "empleado", correo: "empleado@vito.com" },
-  {
-    rol: "Postulante",
-    usuario: "postulante",
-    correo: "postulante@vito.com",
-  },
-];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,12 +11,6 @@ export default function Login() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
-
-  function seleccionarAcceso(usuario) {
-    setIdentificador(usuario);
-    setPassword("");
-    setError("");
-  }
 
   async function manejarLogin(event) {
     event.preventDefault();
@@ -55,7 +37,6 @@ export default function Login() {
         throw new Error("El servidor devolvió una respuesta inesperada.");
       }
 
-      // Guardamos la sesión para esta pestaña del navegador.
       sessionStorage.setItem("gestRH_token", resultado.token);
       sessionStorage.setItem(
         "gestRH_usuario",
@@ -94,7 +75,12 @@ export default function Login() {
           <img
             src="/vita.jpeg"
             alt="Logo Vito Pizzería"
-            style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }}
+            style={{
+              width: 40,
+              height: 40,
+              objectFit: "contain",
+              borderRadius: 8,
+            }}
           />
 
           <div>
@@ -104,8 +90,6 @@ export default function Login() {
         </header>
 
         <div className="login-brand-message">
-          
-
           <h1>
             "Mas que comida,
             <br />
@@ -129,7 +113,12 @@ export default function Login() {
             <img
               src="/vita.jpeg"
               alt="Logo Vito Pizzería"
-              style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8 }}
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: "contain",
+                borderRadius: 8,
+              }}
             />
           </div>
 
@@ -205,30 +194,6 @@ export default function Login() {
           <p className="login-demo-note">
             <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
           </p>
-
-          <div className="login-demo">
-            <p className="login-demo-title">ACCESOS DE DEMOSTRACIÓN</p>
-
-            <div className="login-demo-grid">
-              {accesosDemo.map((acceso) => (
-                <button
-                  className="login-demo-item"
-                  key={acceso.rol}
-                  type="button"
-                  onClick={() => seleccionarAcceso(acceso.usuario)}
-                  disabled={cargando}
-                >
-                  <strong>{acceso.rol}</strong>
-                  <span>{acceso.correo}</span>
-                </button>
-              ))}
-            </div>
-
-            <p className="login-demo-note">
-              Seleccionar un acceso rellena el usuario; necesitas su contraseña
-              válida para ingresar.
-            </p>
-          </div>
         </div>
       </section>
     </main>

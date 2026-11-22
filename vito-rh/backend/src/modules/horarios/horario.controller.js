@@ -133,3 +133,48 @@ export async function guardarPlanificacion(req, res) {
     });
   }
 }
+
+
+export async function obtenerMisHorarios(req, res) {
+  try {
+    const empleadoId = Number(req.usuario.empleadoId);
+    const { inicio, fin } = req.query;
+
+    if (!Number.isInteger(empleadoId) || empleadoId <= 0) {
+      return res.status(403).json({
+        mensaje: "Tu usuario no tiene un empleado asociado.",
+      });
+    }
+
+    if (
+      !inicio ||
+      !fin ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(inicio) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(fin)
+    ) {
+      return res.status(400).json({
+        mensaje: "Debes proporcionar un rango de fechas válido.",
+      });
+    }
+
+    if (inicio > fin) {
+      return res.status(400).json({
+        mensaje: "La fecha inicial no puede ser posterior a la fecha final.",
+      });
+    }
+
+    const resultado = await horarioService.obtenerMisHorarios(
+      empleadoId,
+      inicio,
+      fin
+    );
+
+    return res.json(resultado);
+  } catch (error) {
+    console.error("Error al obtener mis horarios:", error);
+
+    return res.status(500).json({
+      mensaje: "No se pudieron obtener tus horarios.",
+    });
+  }
+}
