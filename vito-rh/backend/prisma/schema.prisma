@@ -193,19 +193,29 @@ model Vacante {
   descripcion   String
   areaId        Int
   activa        Boolean  @default(true)
+  plazasTotales Int @default(1)
   fechaCreacion DateTime @default(now())
 
   area          Area     @relation(fields: [areaId], references: [id])
+  candidatos Candidato[]
 }
 
 model Candidato {
   id             Int             @id @default(autoincrement())
   nombre         String
   apellido       String
+  identidad String?
+
   telefono       String?
   email          String?
   puestoAplicado String          // texto libre, (no es FK)
+  vacanteId Int?
+vacante Vacante? @relation(fields: [vacanteId], references: [id])
   cvArchivo      String?
+  direccion   String?
+  referencias String?
+  fotoArchivo String?
+
   estado         EstadoCandidato @default(EN_PROCESO)
   etapa EtapaReclutamiento @default(APLICACION)
   fechaRegistro  DateTime        @default(now())
