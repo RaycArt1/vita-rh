@@ -6,6 +6,7 @@ import {
   crearCandidato,
   actualizarCandidato,
   verCV,
+  verFoto,
  crearEntrevista,
   actualizarEntrevista,
   cambiarEstadoEntrevista,
@@ -29,12 +30,25 @@ const router = Router();
 router.get("/vacantes", verificarToken, permitirRoles("ADMINISTRADOR"), obtenerVacantes);
 router.post("/vacantes", verificarToken, permitirRoles("ADMINISTRADOR"), crearVacante);
 
-router.post("/", subirCV.single("cv"), crearCandidato);
+
+router.post(
+  "/",
+  subirCV.fields([
+    { name: "cv", maxCount: 1 },
+    { name: "foto", maxCount: 1 },
+  ]),
+  crearCandidato
+);
+
 router.get("/", verificarToken, permitirRoles("ADMINISTRADOR"), obtenerCandidatos);
 
 router.put("/:id", verificarToken, permitirRoles("ADMINISTRADOR"), actualizarCandidato);
 
 router.get("/:id/cv", verificarToken, permitirRoles("ADMINISTRADOR"), verCV);
+
+
+router.get("/:id/foto", verificarToken, permitirRoles("ADMINISTRADOR"), verFoto);
+
 
 router.post("/:id/entrevistas", verificarToken, permitirRoles("ADMINISTRADOR"), crearEntrevista);
 

@@ -52,7 +52,7 @@ const candidatosIniciales = [
 
 const etapas = [
   "Aplicación",
-  "Revisión CV",
+  "Referencias",
   "Entrevista",
   "Evaluación",
   "Oferta",
@@ -104,7 +104,7 @@ useEffect(() => {
       const candidatosGuardados = await obtenerCandidatos();
 const nombresEtapas = {
   APLICACION: "Aplicación",
-  REVISION_CV: "Revisión CV",
+  REVISION_CV: "Referencias",
   ENTREVISTA: "Entrevista",
   EVALUACION: "Evaluación",
   OFERTA: "Oferta",
@@ -221,10 +221,21 @@ const guardarCandidato = async (nuevoCandidato) => {
     const datosBackend = {
       nombre: nuevoCandidato.nombre,
       apellido: nuevoCandidato.apellido,
+
+identidad: nuevoCandidato.identidad,
+
       email: nuevoCandidato.correo,
       telefono: nuevoCandidato.telefono,
+
+direccion: nuevoCandidato.direccion,
+referencias: nuevoCandidato.referencias,
+
       puestoAplicado: nuevoCandidato.puesto,
+      vacanteId: nuevoCandidato.vacanteId,
       cv: nuevoCandidato.cv,
+
+foto: nuevoCandidato.foto,
+
     };
 
     const candidatoGuardado = await crearCandidato(datosBackend);
@@ -245,7 +256,7 @@ const actualizarCandidato = async (candidatoActualizado) => {
 
 const etapasBackend = {
   "Aplicación": "APLICACION",
-  "Revisión CV": "REVISION_CV",
+"Referencias": "REVISION_CV",
   "Entrevista": "ENTREVISTA",
   "Evaluación": "EVALUACION",
   "Oferta": "OFERTA",
@@ -281,17 +292,21 @@ await actualizarEstadoCandidato(
     );
 
     setCandidatoSeleccionado(candidatoActualizado);
+    return true;
   } catch (error) {
     console.error("Error al actualizar candidato:", error);
     alert("No se pudo actualizar el candidato.");
+    return false;
   }
 };
 const [mostrarFormularioVacante, setMostrarFormularioVacante] = useState(false);
+const [filtroVacantes, setFiltroVacantes] = useState("DISPONIBLE");
 
 const [nuevaVacante, setNuevaVacante] = useState({
   nombre: "",
   areaId: "",
   descripcion: "",
+  plazasTotales: 1,
 });
 
 const guardarVacante = async (evento) => {
@@ -308,11 +323,13 @@ const guardarVacante = async (evento) => {
   try {
     setGuardandoVacante(true);
 
-    const vacanteCreada = await crearVacante({
-      nombre: nuevaVacante.nombre.trim(),
-      areaId: Number(nuevaVacante.areaId),
-      descripcion: nuevaVacante.descripcion.trim(),
-    });
+   
+const vacanteCreada = await crearVacante({
+  nombre: nuevaVacante.nombre.trim(),
+  areaId: Number(nuevaVacante.areaId),
+  descripcion: nuevaVacante.descripcion.trim(),
+  plazasTotales: Number(nuevaVacante.plazasTotales ?? 1),
+});
 
     setVacantes((anteriores) => [vacanteCreada, ...anteriores]);
 
@@ -320,6 +337,7 @@ const guardarVacante = async (evento) => {
       nombre: "",
       areaId: "",
       descripcion: "",
+      plazasTotales: 1,
     });
 
     setMostrarFormularioVacante(false);
@@ -379,17 +397,71 @@ const guardarVacante = async (evento) => {
         </div>
       </div>
 
-      <section className="reclutamiento-vacantes">
-        {vacantes.map((vacante) => (
-          <article className="reclutamiento-vacante" key={vacante.id}>
-            <span className="reclutamiento-etiqueta">
-              {vacante.area?.nombre}
-            </span>
-            <h3>{vacante.nombre}</h3>
-            <p>{vacante.descripcion}</p>
-          </article>
-        ))}
-      </section>
+      
+<div
+  style={{
+    display: "flex",
+    gap: "10px",
+    marginBottom: "18px",
+    flexWrap: "wrap",
+  }}
+>
+  {[
+    { valor: "DISPONIBLE", texto: "Disponibles" },
+    { valor: "CUBIERTA", texto: "Cubiertas" },
+   
+  ].map((opcion) => (
+    <button
+      key={opcion.valor}
+      type="button"
+      className={
+        filtroVacantes === opcion.valor
+          ? "reclutamiento-btn-principal"
+          : "reclutamiento-btn-secundario"
+      }
+      aria-pressed={filtroVacantes === opcion.valor}
+      onClick={() => setFiltroVacantes(opcion.valor)}
+    >
+      {opcion.texto}
+    </button>
+  ))}
+</div>
+
+<section className="reclutamiento-vacantes">
+  {vacantes
+    .filter(
+      (vacante) => vacante.estadoVacante === filtroVacantes
+    )
+    .map((vacante) => (
+      <article
+        className="reclutamiento-vacante"
+        key={vacante.id}
+      >
+        <span className="reclutamiento-etiqueta">
+          {vacante.area?.nombre}
+        </span>
+
+        <h3>{vacante.nombre}</h3>
+        <p>{vacante.descripcion}</p>
+
+        <p style={{ marginTop: "12px", fontSize: "13px" }}>
+          <strong>Plazas cubiertas:</strong>{" "}
+          {vacante.plazasCubiertas ?? 0} de{" "}
+          {vacante.plazasTotales ?? 1}
+        </p>
+      </article>
+    ))}
+
+  {vacantes.filter(
+    (vacante) => vacante.estadoVacante === filtroVacantes
+  ).length === 0 && (
+    <p style={{ gridColumn: "1 / -1", color: "#64748b" }}>
+      No hay vacantes en esta categoría.
+    </p>
+  )}
+</section>
+
+
 
       <section className="reclutamiento-pipeline">
         <h2>PIPELINE DE SELECCIÓN</h2>
@@ -582,6 +654,26 @@ const guardarVacante = async (evento) => {
           }
         />
 
+
+<label htmlFor="vacante-plazas">NÚMERO DE PLAZAS</label>
+<input
+  id="vacante-plazas"
+  type="number"
+  min="1"
+  step="1"
+  required
+  value={nuevaVacante.plazasTotales}
+  onChange={(evento) =>
+    setNuevaVacante({
+      ...nuevaVacante,
+      plazasTotales: evento.target.value,
+    })
+  }
+/>
+
+
+
+
         <div className="reclutamiento-modal-acciones">
           <button
             type="button"
@@ -606,7 +698,10 @@ const guardarVacante = async (evento) => {
 
 {mostrarFormularioCandidato && (
   <FormularioCandidato
-    vacantes={vacantes}
+   vacantes={vacantes.filter(
+  (vacante) =>
+    vacante.estadoVacante === "DISPONIBLE"
+)}
     onGuardar={guardarCandidato}
     onCerrar={() => setMostrarFormularioCandidato(false)}
   />
