@@ -18,6 +18,7 @@ import MiResumen from "../pages/empleado/MiResumen";
 import MisSolicitudes from "../pages/empleado/MisSolicitudes";
 import MisLlamados from "../pages/empleado/MisLlamados";
 import MiPerfil from "../pages/empleado/MiPerfil";
+import MisHorarios from "../pages/empleado/MisHorarios";
 
 function RutaPrivada({ children }) {
   const token = sessionStorage.getItem("gestRH_token");
@@ -59,7 +60,7 @@ export default function AppRouter() {
       <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
       <Route path="/mis-llamados" element={<MisLlamados />} />
       <Route path="/mi-perfil" element={<MiPerfil />} />
-  
+      <Route path="/mis-horarios" element={<MisHorarios />} />
     </Routes>
   );
 }
