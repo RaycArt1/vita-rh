@@ -92,6 +92,7 @@ model Area {
   nombre      String   @unique
   descripcion String?
 
+  vacantes  Vacante[]
   puestos   Puesto[]
   empleados Empleado[]
   horarios  Horario[]
@@ -189,6 +190,11 @@ model Candidato {
   email          String?
   puestoAplicado String
   cvArchivo      String?
+  identidad       String?
+  direccion       String?
+  referencias     String?
+  fotoArchivo     String?
+  vacanteId       Int?
   estado         EstadoCandidato    @default(EN_PROCESO)
   etapa          EtapaReclutamiento @default(APLICACION)
   fechaRegistro  DateTime           @default(now())
@@ -196,9 +202,44 @@ model Candidato {
   fechaDescarte  DateTime?
 
   entrevistas Entrevista[]
+  vacante    Vacante?    @relation(fields: [vacanteId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  postulante Postulante?
   empleado    Empleado?
   evaluacion  Evaluacion?
   oferta      Oferta?
+}
+
+// Catálogo de vacantes visible para administradores y postulantes.
+model Vacante {
+  id            Int       @id @default(autoincrement())
+  nombre        String
+  descripcion   String
+  areaId        Int
+  activa        Boolean   @default(true)
+  fechaCreacion DateTime  @default(now())
+  plazasTotales Int       @default(1)
+
+  area       Area        @relation(fields: [areaId], references: [id])
+  candidatos Candidato[]
+}
+
+// Cuenta de postulante independiente de Usuario/Empleado.
+// No se requiere crear un empleado para registrarse a una vacante.
+model Postulante {
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  apellido     String
+  email        String    @unique
+  password     String
+  telefono     String?
+  direccion    String?
+  referencias  String?
+  observaciones String?
+  fotoArchivo  String?
+  candidatoId  Int?      @unique
+  fechaRegistro DateTime @default(now())
+
+  candidato Candidato? @relation(fields: [candidatoId], references: [id], onDelete: SetNull)
 }
 
 model Entrevista {

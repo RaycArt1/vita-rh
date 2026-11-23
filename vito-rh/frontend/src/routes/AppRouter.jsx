@@ -1,4 +1,10 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import RegistroPostulante from "../pages/RegistroPostulante";
+import PostulanteLayout from "../layouts/PostulanteLayout";
+import VacantesPostulante from "../pages/postulante/Vacantes";
+import AplicarPostulante from "../pages/postulante/Aplicar";
+import MisDatosPostulante from "../pages/postulante/MisDatos";
+import MiPostulacion from "../pages/postulante/MiPostulacion";
 
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
@@ -22,6 +28,17 @@ import MisSolicitudes from "../pages/empleado/MisSolicitudes";
 import MisLlamados from "../pages/empleado/MisLlamados";
 import MiPerfil from "../pages/empleado/MiPerfil";
 
+function RutaPersonal() {
+  const token = sessionStorage.getItem("gestRH_token");
+  if (!token) return <Navigate to="/login" replace />;
+  try {
+    if (JSON.parse(sessionStorage.getItem("gestRH_usuario") || "{}").rol === "POSTULANTE") {
+      return <Navigate to="/postulante/vacantes" replace />;
+    }
+  } catch { return <Navigate to="/login" replace />; }
+  return <Outlet />;
+}
+
 function RutaPrivada({ children }) {
   const token = sessionStorage.getItem("gestRH_token");
 
@@ -29,6 +46,21 @@ function RutaPrivada({ children }) {
     return <Navigate to="/login" replace />;
   }
 
+  try {
+    if (JSON.parse(sessionStorage.getItem("gestRH_usuario") || "{}").rol === "POSTULANTE") {
+      return <Navigate to="/postulante/vacantes" replace />;
+    }
+  } catch { /* sesión no encontrada */ }
+  return children;
+}
+
+function RutaPostulante({ children }) {
+  const token = sessionStorage.getItem("gestRH_token");
+  let rol = "";
+  try { rol = JSON.parse(sessionStorage.getItem("gestRH_usuario") || "{}").rol; }
+  catch { /* sesión mal formada */ }
+  if (!token) return <Navigate to="/login" replace />;
+  if (rol !== "POSTULANTE") return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -38,9 +70,18 @@ export default function AppRouter() {
       <Route path="/" element={<Navigate to="/login" />} />
 
       <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<RegistroPostulante />} />
+      <Route path="/postulante" element={<RutaPostulante><PostulanteLayout /></RutaPostulante>}>
+        <Route index element={<Navigate to="vacantes" replace />} />
+        <Route path="vacantes" element={<VacantesPostulante />} />
+        <Route path="aplicar" element={<AplicarPostulante />} />
+        <Route path="mis-datos" element={<MisDatosPostulante />} />
+        <Route path="mi-postulacion" element={<MiPostulacion />} />
+      </Route>
       <Route path="/recuperar" element={<RecuperarContrasena />} />
       <Route path="/restablecer/:token" element={<RestablecerContrasena />} />
 
+      <Route element={<RutaPersonal />}>
       {/* Rutas del Panel Administrador */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/empleados" element={<Empleados />} />
@@ -77,6 +118,7 @@ export default function AppRouter() {
       <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
       <Route path="/mis-llamados" element={<MisLlamados />} />
       <Route path="/mi-perfil" element={<MiPerfil />} />
+      </Route>
     </Routes>
   );
 }

@@ -33,11 +33,16 @@ export function verificarToken(req, res, next) {
       });
     }
 
+    if (usuario.rol === "POSTULANTE" && !req.originalUrl.startsWith("/api/postulantes/")) {
+      return res.status(403).json({ success: false, mensaje: "Acceso reservado al personal de Vita RH." });
+    }
+
     req.usuario = {
       id: Number(usuario.id),
       username: usuario.username,
       rol: usuario.rol,
       empleadoId: usuario.empleadoId,
+      postulanteId: usuario.postulanteId,
     };
 
     next();

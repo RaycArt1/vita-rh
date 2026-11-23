@@ -1,87 +1,123 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./FormularioCandidato.css";
 
-const datosIniciales = {
-  nombre: "",
-  apellido: "",
-  correo: "",
-  fecha: new Date().toISOString().slice(0, 10),
-  puesto: "",
-  telefono: "",
-  direccion: "",
-  referencias: "",
-  notas: "",
-  foto: null,
-  cv: null,
-};
+const FOTO_MAX = 3 * 1024 * 1024;
+const CV_MAX = 5 * 1024 * 1024;
 
+// El formulario se abre en «Aplicar» y usa la cuenta del postulante.
+// La fotografía se guarda en «Mis datos» y también se vincula al candidato
+// antes de enviar su postulación.
 export default function FormularioCandidato({
   vacantes = [],
+  vacanteInicial,
+  perfil,
   onGuardar,
   onCerrar,
 }) {
   const [paso, setPaso] = useState(1);
-  const [datos, setDatos] = useState(datosIniciales);
+  const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [datos, setDatos] = useState({
+    vacanteId: String(vacanteInicial || vacantes[0]?.id || ""),
+    identidad: "",
+    telefono: perfil?.telefono || "",
+    direccion: perfil?.direccion || "",
+    referencias: perfil?.referencias || "",
+    observaciones: perfil?.observaciones || "",
+    foto: null,
+    cv: null,
+  });
+  const [vistaFoto, setVistaFoto] = useState("");
 
-  const actualizar = (campo, valor) => {
-    setDatos((anterior) => ({ ...anterior, [campo]: valor }));
+  useEffect(() => {
+    if (!datos.foto) {
+      setVistaFoto("");
+      return undefined;
+    }
+    const url = URL.createObjectURL(datos.foto);
+    setVistaFoto(url);
+    return () => URL.revokeObjectURL(url);
+  }, [datos.foto]);
+
+  function actualizar(campo, valor) {
+    setDatos((actual) => ({ ...actual, [campo]: valor }));
     setError("");
-  };
+  }
 
-  const siguiente = (evento) => {
+  function siguiente(evento) {
     evento.preventDefault();
+    setError("");
 
     if (paso === 1) {
-    if (!datos.nombre.trim() || !datos.apellido.trim() || !datos.correo.trim() || !datos.puesto) {
-        setError("Completa los campos obligatorios.");
-        return;
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo)) {
-        setError("Ingresa un correo electrónico válido.");
-        return;
+      if (!datos.vacanteId) return setError("Selecciona la vacante a la que deseas aplicar.");
+      if (!datos.telefono.trim()) return setError("Ingresa tu teléfono de contacto.");
+      if (datos.identidad.trim() && !/^\d{13}$/.test(datos.identidad.trim())) {
+        return setError("El número de identidad debe contener 13 dígitos, sin guiones.");
       }
     }
-
-    if (paso === 2 && !datos.telefono.trim()) {
-      setError("Ingresa el teléfono del candidato.");
-      return;
-    }
-
-    setError("");
     setPaso((actual) => Math.min(actual + 1, 3));
-  };
+  }
 
-  const guardar = (evento) => {
-    evento.preventDefault();
+  function seleccionarFoto(evento) {
+    const archivo = evento.target.files?.[0] || null;
+    if (archivo) {
+      const extension = archivo.name.split(".").pop()?.toLowerCase();
+      if (!["jpg", "jpeg", "png"].includes(extension) ||
+          !["image/jpeg", "image/png"].includes(archivo.type) ||
+          archivo.size > FOTO_MAX) {
+        evento.target.value = "";
+        setError("La fotografía debe ser JPG o PNG y no superar los 3 MB.");
+        return;
+      }
+    }
+    actualizar("foto", archivo);
+  }
 
-    if (!datos.cv) {
-      setError("Debes seleccionar un currículum en PDF.");
+  function seleccionarCV(evento) {
+    const archivo = evento.target.files?.[0] || null;
+    if (archivo &&
+        (!archivo.name.toLowerCase().endsWith(".pdf") ||
+          (archivo.type && archivo.type !== "application/pdf") ||
+          archivo.size > CV_MAX)) {
+      evento.target.value = "";
+      setError("El currículum debe ser un PDF de máximo 5 MB.");
+      actualizar("cv", null);
       return;
     }
+    actualizar("cv", archivo);
+  }
 
-    onGuardar({
-      id: Date.now(),
-      nombre: datos.nombre.trim(),
-      apellido: datos.apellido.trim(),
-      correo: datos.correo.trim(),
-      fecha: datos.fecha,
-      puesto: datos.puesto,
-      telefono: datos.telefono.trim(),
-      direccion: datos.direccion.trim(),
-      referencias: datos.referencias.trim(),
-      notas: datos.notas.trim(),
-      foto: datos.foto,
-      cv: datos.cv,
-      estado: "Aplicación",
-      puntuacion: 0,
-    });
-  };
+  async function guardar(evento) {
+    evento.preventDefault();
+    if (guardando) return;
+    if (!datos.cv) return setError("Adjunta tu currículum en PDF para enviar la postulación.");
+    setGuardando(true);
+    setError("");
+    try {
+      await onGuardar({
+        vacanteId: datos.vacanteId,
+        identidad: datos.identidad.trim(),
+        telefono: datos.telefono.trim(),
+        direccion: datos.direccion.trim(),
+        referencias: datos.referencias.trim(),
+        observaciones: datos.observaciones.trim(),
+        foto: datos.foto,
+        cv: datos.cv,
+      });
+    } catch (err) {
+      setError(
+        err.response?.data?.mensaje ||
+          err.response?.data?.error ||
+          err.message ||
+          "No se pudo enviar tu postulación. Vuelve a intentarlo."
+      );
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   return (
-    <div className="fc-fondo" onClick={onCerrar}>
+    <div className="fc-fondo" onClick={guardando ? undefined : onCerrar}>
       <div
         className="fc-modal"
         role="dialog"
@@ -91,83 +127,85 @@ export default function FormularioCandidato({
       >
         <div className="fc-encabezado">
           <div>
-            <h2 id="fc-titulo">Nuevo candidato</h2>
-            <p>Registra una nueva postulación en Vita RH.</p>
+            <h2 id="fc-titulo">Mi postulación</h2>
+            <p>Completa tu solicitud para trabajar en Vita Pizzería.</p>
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar">
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar">
             ×
           </button>
         </div>
 
         <div className="fc-progreso">
-          {["Datos personales", "Contacto y referencias", "Notas y CV"].map(
-            (titulo, indice) => (
-              <div
-                key={titulo}
-                className={`fc-etapa ${paso === indice + 1 ? "actual" : ""} ${
-                  paso > indice + 1 ? "completada" : ""
-                }`}
-              >
-                <span>{indice + 1}</span>
-                <small>{titulo}</small>
-              </div>
-            )
-          )}
+          {["Datos personales", "Referencias", "Fotografía y CV"].map((titulo, indice) => (
+            <div
+              key={titulo}
+              className={`fc-etapa ${paso === indice + 1 ? "actual" : ""} ${
+                paso > indice + 1 ? "completada" : ""
+              }`}
+            >
+              <span>{indice + 1}</span>
+              <small>{titulo}</small>
+            </div>
+          ))}
         </div>
 
         <form onSubmit={paso === 3 ? guardar : siguiente}>
           {paso === 1 && (
-           <div className="fc-campos">
-  <label>
-    Nombre *
-    <input
-      value={datos.nombre}
-      onChange={(e) => actualizar("nombre", e.target.value)}
-      placeholder="Nombre"
-      required
-    />
-  </label>
-
-  <label>
-    Apellido *
-    <input
-      value={datos.apellido}
-      onChange={(e) => actualizar("apellido", e.target.value)}
-      placeholder="Apellido"
-      required
-    />
-  </label>
+            <div className="fc-campos">
+              <p className="fc-archivo">Tus datos de nombre y correo vienen de tu cuenta de postulante.</p>
               <label>
-                Correo electrónico *
+                Nombre
+                <input value={perfil?.nombre || ""} readOnly />
+              </label>
+              <label>
+                Apellido
+                <input value={perfil?.apellido || ""} readOnly />
+              </label>
+              <label>
+                Correo electrónico
+                <input value={perfil?.email || ""} readOnly />
+              </label>
+              <label>
+                Identidad (13 dígitos, opcional)
                 <input
-                  type="email"
-                  value={datos.correo}
-                  onChange={(e) => actualizar("correo", e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  required
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="0801199901234"
+                  value={datos.identidad}
+                  onChange={(e) => actualizar("identidad", e.target.value)}
                 />
               </label>
-
               <label>
-                Fecha de aplicación
+                Teléfono de contacto *
                 <input
-                  type="date"
-                  value={datos.fecha}
-                  onChange={(e) => actualizar("fecha", e.target.value)}
+                  type="tel"
+                  maxLength={24}
                   required
+                  placeholder="9999-9999"
+                  value={datos.telefono}
+                  onChange={(e) => actualizar("telefono", e.target.value)}
                 />
               </label>
-
               <label>
-                Puesto solicitado *
+                Dirección
+                <textarea
+                  rows={2}
+                  maxLength={400}
+                  placeholder="Colonia, ciudad y referencias de ubicación"
+                  value={datos.direccion}
+                  onChange={(e) => actualizar("direccion", e.target.value)}
+                />
+              </label>
+              <label>
+                Vacante a la que deseas aplicar *
                 <select
-                  value={datos.puesto}
-                  onChange={(e) => actualizar("puesto", e.target.value)}
+                  value={datos.vacanteId}
+                  onChange={(e) => actualizar("vacanteId", e.target.value)}
                   required
                 >
-                  <option value="">Seleccionar puesto</option>
+                  <option value="">Seleccionar vacante</option>
                   {vacantes.map((vacante) => (
-                    <option key={vacante.id} value={vacante.nombre}>
+                    <option key={vacante.id} value={String(vacante.id)}>
                       {vacante.nombre}
                     </option>
                   ))}
@@ -179,113 +217,82 @@ export default function FormularioCandidato({
           {paso === 2 && (
             <div className="fc-campos">
               <label>
-                Teléfono *
-                <input
-                  type="tel"
-                  value={datos.telefono}
-                  onChange={(e) => actualizar("telefono", e.target.value)}
-                  placeholder="9999-9999"
-                  required
-                />
-              </label>
-
-              <label>
-                Dirección
+                Referencias personales o laborales
                 <textarea
-                  rows={3}
-                  value={datos.direccion}
-                  onChange={(e) => actualizar("direccion", e.target.value)}
-                  placeholder="Dirección del candidato"
-                />
-              </label>
-
-              <label>
-                Referencias
-                <textarea
-                  rows={3}
+                  rows={4}
+                  maxLength={1000}
+                  placeholder="Nombre, relación o empresa y teléfono de contacto"
                   value={datos.referencias}
                   onChange={(e) => actualizar("referencias", e.target.value)}
-                  placeholder="Nombre y teléfono de las referencias"
                 />
               </label>
+              <label>
+                Experiencia u observaciones adicionales
+                <textarea
+                  rows={4}
+                  maxLength={1000}
+                  placeholder="Cuéntanos brevemente sobre tu experiencia (opcional)"
+                  value={datos.observaciones}
+                  onChange={(e) => actualizar("observaciones", e.target.value)}
+                />
+              </label>
+              <p className="fc-archivo">
+                Puedes actualizar esta información después en «Mis datos».
+              </p>
             </div>
           )}
 
           {paso === 3 && (
             <div className="fc-campos">
               <label>
-                Notas adicionales
-                <textarea
-                  rows={3}
-                  value={datos.notas}
-                  onChange={(e) => actualizar("notas", e.target.value)}
-                  placeholder="Observaciones sobre el candidato"
-                />
-              </label>
-
-              <label>
-                Fotografía (opcional)
+                Fotografía de perfil (opcional; JPG o PNG, máximo 3 MB)
                 <input
                   type="file"
-                  accept="image/png,image/jpeg"
-                  onChange={(e) =>
-                    actualizar("foto", e.target.files?.[0] || null)
-                  }
+                  accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                  onChange={seleccionarFoto}
                 />
               </label>
-
+              {vistaFoto && (
+                <img
+                  src={vistaFoto}
+                  alt="Vista previa de tu fotografía"
+                  style={{ width: 100, height: 100, borderRadius: 12, objectFit: "cover" }}
+                />
+              )}
+              {!datos.foto && perfil?.tieneFoto && (
+                <p className="fc-archivo">Ya tienes una fotografía guardada en «Mis datos». Se utilizará esa.</p>
+              )}
               <label>
                 Currículum en PDF *
                 <input
                   type="file"
                   accept=".pdf,application/pdf"
-                  onChange={(e) => {
-                    const archivo = e.target.files?.[0] || null;
-
-                    if (
-                      archivo &&
-                      (archivo.type !== "application/pdf" ||
-                        archivo.size > 5 * 1024 * 1024)
-                    ) {
-                      actualizar("cv", null);
-                      setError("Selecciona un PDF de máximo 5 MB.");
-                      e.target.value = "";
-                      return;
-                    }
-
-                    actualizar("cv", archivo);
-                  }}
+                  onChange={seleccionarCV}
+                  required={!datos.cv}
                 />
               </label>
-
-              {datos.cv && (
-                <p className="fc-archivo">Archivo: {datos.cv.name}</p>
-              )}
+              {datos.cv && <p className="fc-archivo">CV seleccionado: {datos.cv.name}</p>}
             </div>
           )}
 
           {error && <p className="fc-error" role="alert">{error}</p>}
 
           <div className="fc-acciones">
-            <button type="button" className="fc-cancelar" onClick={onCerrar}>
+            <button type="button" className="fc-cancelar" onClick={onCerrar} disabled={guardando}>
               Cancelar
             </button>
-
             {paso > 1 && (
               <button
                 type="button"
                 className="fc-atras"
-                onClick={() => {
-                  setPaso(paso - 1);
-                  setError("");
-                }}
+                disabled={guardando}
+                onClick={() => { setPaso((actual) => actual - 1); setError(""); }}
               >
                 Anterior
               </button>
             )}
-
-            <button type="submit" className="fc-principal">
-              {paso === 3 ? "Guardar candidato" : "Siguiente"}
+            <button type="submit" className="fc-principal" disabled={guardando}>
+              {guardando ? "Enviando…" : paso === 3 ? "Enviar postulación" : "Siguiente"}
             </button>
           </div>
         </form>
