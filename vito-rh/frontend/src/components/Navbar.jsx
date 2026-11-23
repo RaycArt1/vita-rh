@@ -29,11 +29,16 @@ export default function Navbar() {
 
   return (
     <header className="dashboard-topbar d-flex justify-content-between align-items-center px-4 py-2 bg-white border-bottom shadow-sm">
+      {/* Título o bienvenida a la izquierda */}
       <div className="d-flex align-items-center gap-3">
         <span className="fw-semibold text-secondary">Vito Pizzería · Gestión de Recursos Humanos</span>
-       
+        <span className="dashboard-topbar-status badge bg-light text-dark border d-none d-md-inline-flex align-items-center gap-1">
+          <span className="dashboard-status-dot bg-success rounded-circle" style={{ width: 8, height: 8 }} />
+          Entorno de demostración
+        </span>
       </div>
 
+      {/* Perfil de usuario y cerrar sesión a la derecha */}
       <div className="d-flex align-items-center gap-3">
         <div className="d-flex align-items-center gap-2 border rounded-pill px-3 py-1 bg-light">
           <div
@@ -43,8 +48,12 @@ export default function Navbar() {
             {iniciales}
           </div>
           <div className="text-start d-none d-sm-block" style={{ lineHeight: 1.2 }}>
-            <strong className="d-block text-dark" style={{ fontSize: 13 }}>{username}</strong>
-            <span className="text-muted" style={{ fontSize: 11 }}>{rolTexto}</span>
+            <strong className="d-block text-dark" style={{ fontSize: 13 }}>
+              {username}
+            </strong>
+            <span className="text-muted" style={{ fontSize: 11 }}>
+              {rolTexto}
+            </span>
           </div>
         </div>
 
@@ -55,7 +64,7 @@ export default function Navbar() {
           title="Cerrar sesión"
         >
           <FaSignOutAlt />
-          <span className="d-none d-md-inline">Cerrar sesión</span>
+          <span className="d-none d-md-inline">Cerrar Sesion</span>
         </button>
       </div>
     </header>

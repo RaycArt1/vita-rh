@@ -131,11 +131,12 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-  margin: 36px 0 24px;
+  margin: 32px 0 24px;
 }
 
 .chef-stat-card,
-.chef-team-card {
+.chef-team-card,
+.chef-panel-card {
   background: white;
   border: 1px solid #eceef1;
   border-radius: 18px;
@@ -144,6 +145,37 @@
 
 .chef-stat-card {
   padding: 22px 20px;
+  border-top: 3px solid transparent;
+}
+
+.chef-stat-card.stat-rojo {
+  border-top-color: #e7353b;
+}
+
+.chef-stat-card.stat-verde {
+  border-top-color: #059669;
+}
+
+.chef-stat-card.stat-ambar {
+  border-top-color: #d97706;
+}
+
+.chef-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chef-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 14px;
 }
 
 .chef-badge {
@@ -156,9 +188,19 @@
   font-weight: 700;
 }
 
+.chef-badge.badge-verde {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.chef-badge.badge-ambar {
+  background: #fef3c7;
+  color: #b45309;
+}
+
 .chef-stat-card > strong {
   display: block;
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 30px;
   line-height: 1.1;
 }
@@ -169,22 +211,55 @@
   font-size: 12px;
 }
 
-.chef-team-card {
-  padding: 22px 20px 12px;
+/* Grid principal estilo Panel Principal */
+.chef-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 20px;
+  align-items: start;
 }
 
-.chef-team-card h2 {
+.chef-side-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.chef-team-card,
+.chef-panel-card {
+  padding: 22px 20px;
+}
+
+.chef-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.chef-team-card h2,
+.chef-panel-header h2 {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 15px;
   font-weight: 750;
 }
 
-.chef-team-card h2 svg {
+.chef-team-card h2 svg,
+.chef-panel-header h2 svg {
   color: #b91c1c;
   font-size: 14px;
+}
+
+.chef-live-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #d1fae5;
+  color: #047857;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .chef-team-member {
@@ -198,6 +273,7 @@
 
 .chef-team-member:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .chef-avatar {
@@ -212,6 +288,18 @@
   color: #dc2626;
   font-size: 11px;
   font-weight: 700;
+}
+
+.chef-avatar.avatar-verde {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.chef-avatar.avatar-ambar {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
 }
 
 .chef-member-info {
@@ -253,13 +341,126 @@
   background: #d1fae5;
   color: #047857;
   font-size: 10px;
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.chef-shift-status.proximo {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+/* Eventos y métricas clave */
+.chef-event-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.chef-event-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.chef-event-box {
+  width: 44px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.chef-event-box span {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.chef-event-box strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.chef-event-info strong {
+  display: block;
+  font-size: 12px;
+  color: #111827;
+}
+
+.chef-event-info span {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.chef-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.chef-metric-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.chef-metric-row span {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.chef-metric-row strong {
+  display: block;
+  font-size: 16px;
+  color: #111827;
+  margin-top: 2px;
+}
+
+.chef-metric-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.chef-metric-pill.grave {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.chef-metric-pill.moderado {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.chef-metric-pill.ok {
+  background: #d1fae5;
+  color: #047857;
 }
 
 .chef-disclaimer {
   margin-top: 18px;
   color: #6b7280;
   font-size: 11px;
+}
+
+@media (max-width: 1050px) {
+  .chef-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -318,8 +519,9 @@
     padding: 24px 14px;
   }
 
-  .chef-team-card {
-    padding: 16px 12px 8px;
+  .chef-team-card,
+  .chef-panel-card {
+    padding: 16px 12px;
   }
 
   .chef-team-member {

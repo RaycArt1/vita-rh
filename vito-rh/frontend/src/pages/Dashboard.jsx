@@ -10,7 +10,6 @@ import {
   FaFolderOpen,
   FaExclamationTriangle,
   FaCalendarCheck,
-  FaMoneyBillWave,
 } from "react-icons/fa";
 import "./Dashboard.css";
 
@@ -129,7 +128,7 @@ export default function Dashboard() {
   const eventos = datos?.eventos ?? [];
 
   return (
-    <MainLayout>
+    <MainLayout mostrarNavbar={false}>
       <div className="dashboard-page">
         <div className="dashboard-heading">
           <p>{fechaCompleta(new Date())} — Vito Pizzería</p>

@@ -5,7 +5,6 @@ import "./FormularioCandidato.css";
 const datosIniciales = {
   nombre: "",
   apellido: "",
-  identidad: "",
   correo: "",
   fecha: new Date().toISOString().slice(0, 10),
   puesto: "",
@@ -15,7 +14,6 @@ const datosIniciales = {
   notas: "",
   foto: null,
   cv: null,
-  vacanteId: "",
 };
 
 export default function FormularioCandidato({
@@ -47,9 +45,7 @@ export default function FormularioCandidato({
       }
     }
 
-    
-if (paso === 1 && !datos.telefono.trim()) {
-
+    if (paso === 2 && !datos.telefono.trim()) {
       setError("Ingresa el teléfono del candidato.");
       return;
     }
@@ -70,13 +66,9 @@ if (paso === 1 && !datos.telefono.trim()) {
       id: Date.now(),
       nombre: datos.nombre.trim(),
       apellido: datos.apellido.trim(),
-
-identidad: datos.identidad.trim(),
-
       correo: datos.correo.trim(),
       fecha: datos.fecha,
       puesto: datos.puesto,
-      vacanteId: datos.vacanteId,
       telefono: datos.telefono.trim(),
       direccion: datos.direccion.trim(),
       referencias: datos.referencias.trim(),
@@ -108,9 +100,7 @@ identidad: datos.identidad.trim(),
         </div>
 
         <div className="fc-progreso">
-          
-{["Datos personales", "Referencias", "Fotografía y CV"].map(
-
+          {["Datos personales", "Contacto y referencias", "Notas y CV"].map(
             (titulo, indice) => (
               <div
                 key={titulo}
@@ -147,21 +137,6 @@ identidad: datos.identidad.trim(),
       required
     />
   </label>
-
-
-<label>
-  Número de identidad *
-  <input
-    type="text"
-    value={datos.identidad}
-    onChange={(e) => actualizar("identidad", e.target.value)}
-    placeholder="0801-2004-12345"
-    maxLength={15}
-    required
-  />
-</label>
-
-
               <label>
                 Correo electrónico *
                 <input
@@ -185,69 +160,44 @@ identidad: datos.identidad.trim(),
 
               <label>
                 Puesto solicitado *
-            
-<select
-  value={datos.vacanteId}
-  onChange={(e) => {
-    const idSeleccionado = e.target.value;
-
-    const vacanteSeleccionada = vacantes.find(
-      (vacante) => String(vacante.id) === idSeleccionado
-    );
-
-    setDatos((anterior) => ({
-      ...anterior,
-      vacanteId: idSeleccionado,
-      puesto: vacanteSeleccionada?.nombre || "",
-    }));
-
-    setError("");
-  }}
-  required
->
-  <option value="">Seleccionar puesto</option>
-  {vacantes.map((vacante) => (
-    <option key={vacante.id} value={vacante.id}>
-      {vacante.nombre}
-    </option>
-  ))}
-</select>
-
-
-
+                <select
+                  value={datos.puesto}
+                  onChange={(e) => actualizar("puesto", e.target.value)}
+                  required
+                >
+                  <option value="">Seleccionar puesto</option>
+                  {vacantes.map((vacante) => (
+                    <option key={vacante.id} value={vacante.nombre}>
+                      {vacante.nombre}
+                    </option>
+                  ))}
+                </select>
               </label>
-<label>
-  Teléfono *
-  <input
-    type="tel"
-    value={datos.telefono}
-    onChange={(e) => actualizar("telefono", e.target.value)}
-    placeholder="9999-9999"
-    required
-  />
-</label>
-
-<label>
-  Dirección
-  <textarea
-    rows={3}
-    value={datos.direccion}
-    onChange={(e) => actualizar("direccion", e.target.value)}
-    placeholder="Dirección del candidato"
-  />
-</label>
-
-                 
-
-
             </div>
           )}
 
           {paso === 2 && (
             <div className="fc-campos">
-            
+              <label>
+                Teléfono *
+                <input
+                  type="tel"
+                  value={datos.telefono}
+                  onChange={(e) => actualizar("telefono", e.target.value)}
+                  placeholder="9999-9999"
+                  required
+                />
+              </label>
 
-          
+              <label>
+                Dirección
+                <textarea
+                  rows={3}
+                  value={datos.direccion}
+                  onChange={(e) => actualizar("direccion", e.target.value)}
+                  placeholder="Dirección del candidato"
+                />
+              </label>
 
               <label>
                 Referencias
@@ -263,7 +213,15 @@ identidad: datos.identidad.trim(),
 
           {paso === 3 && (
             <div className="fc-campos">
-          
+              <label>
+                Notas adicionales
+                <textarea
+                  rows={3}
+                  value={datos.notas}
+                  onChange={(e) => actualizar("notas", e.target.value)}
+                  placeholder="Observaciones sobre el candidato"
+                />
+              </label>
 
               <label>
                 Fotografía (opcional)
