@@ -1,5 +1,6 @@
+import FotoCandidato from "./FotoCandidato";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./PerfilCandidato.css";
 import {
   crearEntrevista,
@@ -7,12 +8,14 @@ import {
   cambiarEstadoEntrevista,
   subirDocumentoEntrevista,
   obtenerDocumentoEntrevista,
+  obtenerFoto,
   guardarEvaluacion as guardarEvaluacionEnServidor,
   guardarOferta as guardarOfertaEnServidor,
   responderOferta as responderOfertaEnServidor,
   descartarCandidato as descartarCandidatoEnServidor,
   obtenerCatalogosContratacion,
 contratarCandidato as contratarCandidatoEnServidor,
+obtenerCV,
 } from "../services/reclutamientoService";
 
 const secciones = [
@@ -30,6 +33,67 @@ export default function PerfilCandidato({
   onCerrar,
 }) {
   const [paso, setPaso] = useState(0);
+
+
+
+const [fotoUrl, setFotoUrl] = useState(null);
+
+useEffect(() => {
+  let cancelado = false;
+  let urlTemporal = null;
+
+  setFotoUrl(null);
+
+  if (candidato.fotoArchivo) {
+    obtenerFoto(candidato.id)
+      .then((archivo) => {
+        if (cancelado) return;
+
+        urlTemporal = URL.createObjectURL(archivo);
+        setFotoUrl(urlTemporal);
+      })
+      .catch((error) => {
+        console.error("Error al cargar fotografía:", error);
+      });
+  }
+
+  return () => {
+    cancelado = true;
+    if (urlTemporal) {
+      URL.revokeObjectURL(urlTemporal);
+    }
+  };
+}, [candidato.id, candidato.fotoArchivo]);
+
+
+
+const abrirCV = async () => {
+  const ventana = window.open("", "_blank");
+
+  if (!ventana) {
+    alert("Permite las ventanas emergentes para ver el CV.");
+    return;
+  }
+
+  ventana.opener = null;
+
+  try {
+    const archivo = await obtenerCV(candidato.id);
+    const url = URL.createObjectURL(archivo);
+
+    ventana.location.href = url;
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) {
+    ventana.close();
+    console.error("Error al abrir CV:", error);
+
+    alert(
+      error.response?.data?.mensaje ||
+      "No se pudo abrir el CV."
+    );
+  }
+};
 
 
 const [mostrarFormularioContratacion, setMostrarFormularioContratacion] =
@@ -55,7 +119,9 @@ const abrirFormularioContratacion = async () => {
 
     setAreasContratacion(areas);
     setDatosContratacion({
-      identidad: "",
+     
+      identidad: candidato.identidad || "",
+
       telefono: candidato.telefono || "",
       correo: candidato.correo || candidato.email || "",
       areaId: "",
@@ -113,9 +179,11 @@ const confirmarContratacion = async (e) => {
 
     alert("¡Candidato contratado y registrado como empleado!");
 
-    setMostrarFormularioContratacion(false);
-    await onActualizar?.();
-    onCerrar?.();
+    
+setMostrarFormularioContratacion(false);
+onCerrar?.();
+window.location.reload();
+
   } catch (error) {
     alert(
       error.response?.data?.mensaje ||
@@ -165,8 +233,9 @@ const registrarDescarte = async () => {
 
     alert("Candidato descartado correctamente.");
 
-    await onActualizar?.();
+    // await onActualizar?.();
     onCerrar?.();
+    window.location.reload();
   } catch (error) {
     alert(
       error.response?.data?.mensaje ||
@@ -571,23 +640,92 @@ const responderOferta = async (respuesta) => {
 
 const etapasSeleccion = [
   "Aplicación",
-  "Revisión CV",
+ "Referencias",
   "Entrevista",
   "Evaluación",
   "Oferta",
   "Contratado",
 ];
 
-const avanzarEtapa = () => {
+
+const avanzarEtapa = async () => {
   const indiceActual = etapasSeleccion.indexOf(candidato.estado);
 
-  if (indiceActual >= 0 && indiceActual < etapasSeleccion.length - 1) {
-    onActualizar({
-      ...candidato,
-      estado: etapasSeleccion[indiceActual + 1],
-    });
+  if (indiceActual < 0 || indiceActual >= 4) return;
+
+  const siguienteEtapa = etapasSeleccion[indiceActual + 1];
+
+  if (
+    siguienteEtapa === "Evaluación" &&
+    candidato.entrevista?.estadoEntrevista !== "REALIZADA"
+  ) {
+    alert("Primero debes completar la entrevista.");
+    return;
+  }
+
+  
+if (
+  siguienteEtapa === "Oferta" &&
+  candidato.evaluacion?.resultado !== "APROBADO"
+) {
+  if (candidato.evaluacion?.resultado === "REPROBADO") {
+    alert(
+      "No es posible avanzar a Oferta porque el candidato no aprobó la evaluación. Puedes mantenerlo en esta etapa o descartarlo registrando el motivo."
+    );
+  } else {
+    alert(
+      "La evaluación aún no ha sido completada. Registra el resultado antes de avanzar a la etapa de Oferta."
+    );
+  }
+  return;
+}
+
+
+
+  const guardado = await onActualizar({
+    ...candidato,
+    estado: siguienteEtapa,
+  });
+
+  if (guardado === true) {
+    setPaso(indiceActual + 1);
   }
 };
+
+
+
+const retrocederEtapa = async () => {
+  const indiceActual = etapasSeleccion.indexOf(candidato.estado);
+
+  if (
+    indiceActual <= 0 ||
+    candidato.estado === "Contratado" ||
+    candidato.estado === "Descartado"
+  ) {
+    return;
+  }
+
+  const etapaAnterior = etapasSeleccion[indiceActual - 1];
+
+  const confirmado = window.confirm(
+    `¿Deseas retroceder a ${candidato.nombre} a la etapa "${etapaAnterior}"?\n\nLa información registrada se conservará.`
+  );
+
+  if (!confirmado) return;
+
+  const guardado = await onActualizar({
+    ...candidato,
+    estado: etapaAnterior,
+  });
+
+  if (guardado === true) {
+    setPaso(indiceActual - 1);
+  }
+};
+
+
+
+
   const iniciales = candidato.nombre
     .split(" ")
     .slice(0, 2)
@@ -613,7 +751,9 @@ const avanzarEtapa = () => {
 
         <div className="pc-cuerpo">
           <div className="pc-candidato">
-            <div className="pc-avatar">{iniciales}</div>
+           
+<div className="pc-avatar"><FotoCandidato candidato={candidato} iniciales={iniciales} /></div>
+
 
             <div className="pc-identidad">
               <h3>{candidato.nombre}</h3>
@@ -624,14 +764,20 @@ const avanzarEtapa = () => {
               <span className="pc-estado">{candidato.estado}</span>
             </div>
 
-            <button
-              type="button"
-              className="pc-boton-secundario"
-              onClick={() => setPaso(Math.max(0, paso - 1))}
-            >
-              ← Retroceder
-            </button>
-          </div>
+       
+<button
+  type="button"
+  className="pc-boton-secundario"
+  onClick={retrocederEtapa}
+  disabled={
+    etapasSeleccion.indexOf(candidato.estado) <= 0 ||
+    candidato.estado === "Contratado" ||
+    candidato.estado === "Descartado"
+  }
+>
+  ← Retroceder etapa
+</button>
+</div>
 
           <div className="pc-pasos">
             {secciones.map((seccion, indice) => (
@@ -670,21 +816,32 @@ const avanzarEtapa = () => {
                   <strong>{candidato.puesto}</strong>
                 </div>
 
-                <div className="pc-ancho-completo">
-                  <small>Experiencia / Observaciones</small>
-                  <strong>{candidato.notas || "Sin observaciones"}</strong>
-                </div>
+               
+<div className="pc-ancho-completo">
+  <small>Dirección</small>
+  <strong>{candidato.direccion || "No registrada"}</strong>
+</div>
+
 
                 <div className="pc-ancho-completo">
                   <small>Currículum</small>
                  {(candidato.cv || candidato.cvArchivo) ? (
-                    <a
-                     href={`http://localhost:3000/api/reclutamiento/${candidato.id}/cv`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Ver CV
-                    </a>
+                       
+<button
+  type="button"
+  onClick={abrirCV}
+  style={{
+    background: "none",
+    border: "none",
+    color: "#2563eb",
+    textDecoration: "underline",
+    cursor: "pointer",
+    padding: 0,
+  }}
+>
+  Ver CV
+</button>
+
                   ) : (
                     <strong>No hay CV adjunto</strong>
                   )}
@@ -699,10 +856,7 @@ const avanzarEtapa = () => {
                   <strong>{candidato.referencias || "No registrada"}</strong>
                 </div>
 
-                <div className="pc-ancho-completo">
-                  <small>Dirección</small>
-                  <strong>{candidato.direccion || "No registrada"}</strong>
-                </div>
+                
               </div>
             )}
 
@@ -862,8 +1016,12 @@ const avanzarEtapa = () => {
     : "Pendiente"}
 </p>
 
-{(candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
-  "PENDIENTE" && (
+
+{candidato.estado !== "Descartado" &&
+  candidato.estado !== "Contratado" &&
+  (candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
+    "PENDIENTE" && (
+
   <div className="pc-botones-oferta">
     <button
       type="button"
@@ -906,8 +1064,12 @@ const avanzarEtapa = () => {
 
 
        
-{(candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
-  "PENDIENTE" && (
+
+{candidato.estado !== "Descartado" &&
+  candidato.estado !== "Contratado" &&
+  (candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
+    "PENDIENTE" && (
+
   <button
     type="button"
     className="pc-boton-principal"
@@ -922,6 +1084,8 @@ const avanzarEtapa = () => {
       <div>
         <p>Este candidato todavía no tiene una entrevista registrada.</p>
 
+{candidato.estado !== "Descartado" && candidato.estado !== "Contratado" && (
+
         <button
           type="button"
 
@@ -930,6 +1094,7 @@ const avanzarEtapa = () => {
         >
           + Registrar entrevista
         </button>
+        )}
       </div>
     )}
   </div>
@@ -958,25 +1123,7 @@ const avanzarEtapa = () => {
           />
         </label>
 
-        <label>
-          CLASIFICACIÓN ADICIONAL
-          <select
-            value={evaluacion.clasificacion}
-            onChange={(e) =>
-              setEvaluacion({
-                ...evaluacion,
-                clasificacion: e.target.value,
-              })
-            }
-          >
-            <option value="Informativo">Informativo</option>
-            <option value="Bueno">Bueno</option>
-            <option value="Excelente">Excelente</option>
-            <option value="Requiere seguimiento">
-              Requiere seguimiento
-            </option>
-          </select>
-        </label>
+    
 
 <label>
   RESULTADO DE LA EVALUACIÓN
@@ -1043,10 +1190,7 @@ const avanzarEtapa = () => {
         </div>
 
         <div className="pc-detalles-evaluacion">
-          <p>
-            <strong>Clasificación:</strong>{" "}
-            {candidato.evaluacion?.clasificacion ?? "Informativo"}
-          </p>
+         
 
 <p>
   <strong>Resultado:</strong>{" "}
@@ -1063,6 +1207,8 @@ const avanzarEtapa = () => {
           </p>
         </div>
 
+{candidato.estado !== "Descartado" && candidato.estado !== "Contratado" && (
+
        <button
        type="button"
        className="pc-boton-principal"
@@ -1073,6 +1219,9 @@ const avanzarEtapa = () => {
 >
       Modificar evaluación
       </button>
+
+)}
+
       {candidato.entrevista?.estadoEntrevista !== "REALIZADA" && (
   <p>
     Primero debes realizar la entrevista para evaluar al candidato.
@@ -1285,6 +1434,7 @@ const avanzarEtapa = () => {
 <button
   type="button"
   className="pc-boton-principal"
+  style={{ display: mostrarFormularioContratacion ? "none" : undefined }}
   disabled={
     cargandoContratacion ||
     guardandoContratacion ||
@@ -1302,6 +1452,7 @@ const avanzarEtapa = () => {
       <button
         type="button"
         className="pc-boton-secundario"
+        style={{ display: mostrarFormularioContratacion ? "none" : undefined }}
         disabled={
   descartando ||
   candidato.estado === "Contratado" ||
@@ -1316,30 +1467,22 @@ const avanzarEtapa = () => {
 )}
 
 
+
 {mostrarFormularioContratacion && (
   <form
     onSubmit={confirmarContratacion}
-    style={{
-      marginTop: "24px",
-      padding: "20px",
-      border: "1px solid #ddd",
-      borderRadius: "10px",
-      textAlign: "left",
-    }}
+    className="pc-contratacion-formulario"
   >
-    <h3>Registro de contratación</h3>
-    <p>Completa los datos para registrar al nuevo empleado.</p>
+    <div className="pc-contratacion-encabezado">
+      <h3>Registro de contratación</h3>
+      <p>
+        Completa los datos para registrar al nuevo empleado.
+      </p>
+    </div>
 
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: "15px",
-        marginTop: "15px",
-      }}
-    >
-      <label>
-        Identidad
+    <div className="pc-contratacion-grid">
+      <label className="pc-contratacion-campo">
+        <span>Identidad</span>
         <input
           type="text"
           required
@@ -1354,8 +1497,8 @@ const avanzarEtapa = () => {
         />
       </label>
 
-      <label>
-        Teléfono
+      <label className="pc-contratacion-campo">
+        <span>Teléfono</span>
         <input
           type="tel"
           required
@@ -1369,8 +1512,8 @@ const avanzarEtapa = () => {
         />
       </label>
 
-      <label>
-        Correo electrónico
+      <label className="pc-contratacion-campo">
+        <span>Correo electrónico</span>
         <input
           type="email"
           required
@@ -1384,8 +1527,8 @@ const avanzarEtapa = () => {
         />
       </label>
 
-      <label>
-        Área
+      <label className="pc-contratacion-campo">
+        <span>Área</span>
         <select
           required
           value={datosContratacion.areaId}
@@ -1406,8 +1549,8 @@ const avanzarEtapa = () => {
         </select>
       </label>
 
-      <label>
-        Puesto
+      <label className="pc-contratacion-campo">
+        <span>Puesto</span>
         <select
           required
           value={datosContratacion.puestoId}
@@ -1423,7 +1566,8 @@ const avanzarEtapa = () => {
           {(
             areasContratacion.find(
               (area) =>
-                String(area.id) === String(datosContratacion.areaId)
+                String(area.id) ===
+                String(datosContratacion.areaId)
             )?.puestos || []
           ).map((puesto) => (
             <option key={puesto.id} value={puesto.id}>
@@ -1434,28 +1578,32 @@ const avanzarEtapa = () => {
       </label>
     </div>
 
-    <p style={{ marginTop: "18px" }}>
-      <strong>Salario ofrecido:</strong>{" "}
-      L {Number(candidato.oferta?.salario || 0).toLocaleString("es-HN")}
-    </p>
+    <div className="pc-contratacion-resumen">
+      <div>
+        <span>Salario ofrecido</span>
+        <strong>
+          L{" "}
+          {Number(
+            candidato.oferta?.salario || 0
+          ).toLocaleString("es-HN")}
+        </strong>
+      </div>
 
-    <p>
-      <strong>Fecha de ingreso:</strong>{" "}
-      {candidato.oferta?.fechaInicio
-        ? new Date(candidato.oferta.fechaInicio).toLocaleDateString(
-            "es-HN",
-            { timeZone: "UTC" }
-          )
-        : "No registrada"}
-    </p>
+      <div>
+        <span>Fecha de ingreso</span>
+        <strong>
+          {candidato.oferta?.fechaInicio
+            ? new Date(
+                candidato.oferta.fechaInicio
+              ).toLocaleDateString("es-HN", {
+                timeZone: "UTC",
+              })
+            : "No registrada"}
+        </strong>
+      </div>
+    </div>
 
-    <div
-      style={{
-        display: "flex",
-        gap: "12px",
-        marginTop: "20px",
-      }}
-    >
+    <div className="pc-contratacion-botones">
       <button
         type="submit"
         className="pc-boton-principal"
@@ -1470,7 +1618,9 @@ const avanzarEtapa = () => {
         type="button"
         className="pc-boton-secundario"
         disabled={guardandoContratacion}
-        onClick={() => setMostrarFormularioContratacion(false)}
+        onClick={() =>
+          setMostrarFormularioContratacion(false)
+        }
       >
         Cancelar
       </button>
@@ -1479,11 +1629,14 @@ const avanzarEtapa = () => {
 )}
 
 
+
+
   
 
           </div>
 
           <div className="pc-acciones">
+            <div style={{ display: "flex", gap: "8px" }}>
             <button
               type="button"
               className="pc-boton-secundario"
@@ -1494,19 +1647,31 @@ const avanzarEtapa = () => {
               ← Anterior
             </button>
 
+
+<button
+  type="button"
+  className="pc-boton-secundario"
+  disabled={paso === 5}
+  onClick={() => setPaso(paso + 1)}
+>
+  Siguiente →
+</button>
+
+</div>
+
+
+
+
             <div className="pc-acciones-derecha">
-              <button
-                type="button"
-                className="pc-boton-secundario"
-                onClick={onCerrar}
-              >
-                Cancelar
-              </button>
+             
 
               
+
 {paso !== 5 &&
+  paso === etapasSeleccion.indexOf(candidato.estado) &&
   candidato.estado !== "Contratado" &&
   candidato.estado !== "Descartado" && (
+
     <button
       type="button"
       className="pc-boton-secundario"
@@ -1518,31 +1683,45 @@ const avanzarEtapa = () => {
   )}
 
 
-{etapasSeleccion.includes(candidato.estado) &&
+{paso === 4 &&
+  candidato.estado === "Oferta" &&
+  candidato.oferta?.estado === "Aceptada" && (
+    <button
+      type="button"
+      className="pc-boton-principal"
+      onClick={() => setPaso(5)}
+    >
+      Avanzar a Contratación →
+    </button>
+)}
+
+
+
+{paso < 5 &&
+  paso === etapasSeleccion.indexOf(candidato.estado) &&
+  etapasSeleccion.includes(candidato.estado) &&
   candidato.estado !== "Contratado" &&
-  candidato.estado !== "Oferta" && (
+  candidato.estado !== "Oferta" &&
+  candidato.estado !== "Descartado" && (
+
+
     <button
       type="button"
       className="pc-boton-principal"
       onClick={avanzarEtapa}
     >
-      Avanzar etapa
+     
+Avanzar a {etapasSeleccion[etapasSeleccion.indexOf(candidato.estado) + 1]} →
+
     </button>
   )}
 
-              {paso < 5 && (
-                <button
-                  type="button"
-                  className="pc-boton-principal"
-                  onClick={() => setPaso(paso + 1)}
-                >
-                  Siguiente →
-                </button>
-              )}
+             
             </div>
           </div>
         </div>
       </div>
     </div>
+    
   );
 }

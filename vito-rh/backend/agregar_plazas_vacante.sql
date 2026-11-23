@@ -1,0 +1,2 @@
+ALTER TABLE "Vacante"
+ADD COLUMN "plazasTotales" INTEGER NOT NULL DEFAULT 1;

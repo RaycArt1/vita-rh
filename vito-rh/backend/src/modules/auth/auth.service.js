@@ -30,7 +30,28 @@ export async function login(username, password) {
   console.log("-> Resultado de la búsqueda en Prisma:", usuario ? "Usuario encontrado" : "No encontrado");
 
   if (!usuario) {
-    throw new Error("Usuario o contraseña incorrectos");
+    // Las cuentas de postulantes no se crean como empleados.
+    const postulante = await prisma.postulante.findUnique({
+      where: { email: cleanUsername.toLowerCase() },
+    });
+    if (!postulante || !(await bcrypt.compare(String(password ?? ""), postulante.password))) {
+      throw new Error("Usuario o contraseña incorrectos");
+    }
+    const token = jwt.sign(
+      { id: postulante.id, postulanteId: postulante.id, rol: "POSTULANTE", tipo: "postulante" },
+      process.env.JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+    return {
+      token,
+      usuario: {
+        id: postulante.id,
+        username: postulante.email,
+        nombre: postulante.nombre,
+        apellido: postulante.apellido,
+        rol: "POSTULANTE",
+      },
+    };
   }
 
   const coincide = await bcrypt.compare(cleanPassword, usuario.password);

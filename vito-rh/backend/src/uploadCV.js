@@ -1,10 +1,13 @@
 
 import multer from "multer";
 import path from "path";
+import fs from "node:fs";
+const cvDir = path.resolve(process.cwd(), "uploads", "cvs");
+fs.mkdirSync(cvDir, { recursive: true });
 
 const almacenamiento = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/cvs");
+    cb(null, cvDir);
   },
   filename: (req, file, cb) => {
     const nombre = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;

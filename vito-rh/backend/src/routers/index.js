@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import authRoutes from "../modules/auth/auth.routes.js";
 import empleadoRoutes from "../modules/empleados/empleado.routes.js";
 import horariosRoutes from "../modules/horarios/horario.routes.js";
@@ -13,6 +13,7 @@ import bitacoraRoutes from "../modules/bitacora/bitacora.routes.js";
 import nominaRoutes from "../modules/nomina/nomina.routes.js";
 import dashboardRoutes from "../modules/Dashboard/dashboard.routes.js";
 import resumenRoutes from "../modules/resumen/resumen.routes.js";
+import postulantesRoutes from "../modules/postulantes/postulantes.routes.js";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.use("/dashboard", dashboardRoutes);
 router.use("/descansos", descansosRoutes);
 router.use("/horarios", horariosRoutes);
 router.use("/auth", authRoutes);
+router.use("/postulantes", postulantesRoutes);
 router.use("/empleados", empleadoRoutes);
 router.use("/usuarios", usuariosRoutes);
 router.use("/roles", rolesRoutes);
