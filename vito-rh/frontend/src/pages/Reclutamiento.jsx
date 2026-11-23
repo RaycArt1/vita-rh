@@ -7,12 +7,25 @@ import {
   crearCandidato,
   obtenerCandidatos,
   actualizarEstadoCandidato,
-  obtenerVacantes,
-  crearVacante,
-  obtenerAreas,
 } from "../services/reclutamientoService";
 
 
+
+const vacantesIniciales = [
+  {
+    id: 1,
+    area: "Cocina",
+    nombre: "Pizzero",
+    descripcion: "Preparación de pizzas artesanales y manejo de horno.",
+  },
+  {
+    id: 2,
+    area: "Servicio",
+    nombre: "Mesero",
+    descripcion: "Atención de mesa y experiencia al cliente.",
+  },
+
+];
 
 const candidatosIniciales = [
   {
@@ -52,7 +65,7 @@ const candidatosIniciales = [
 
 const etapas = [
   "Aplicación",
-  "Referencias",
+  "Revisión CV",
   "Entrevista",
   "Evaluación",
   "Oferta",
@@ -60,26 +73,7 @@ const etapas = [
 ];
 
 export default function Reclutamiento() {
-const [vacantes, setVacantes] = useState([]);
-const [areas, setAreas] = useState([]);
-const [guardandoVacante, setGuardandoVacante] = useState(false);
-
-useEffect(() => {
-  const cargarVacantesYAreas = async () => {
-    try {
-      const [vacantesGuardadas, areasGuardadas] = await Promise.all([
-        obtenerVacantes(),
-        obtenerAreas(),
-      ]);
-      setVacantes(vacantesGuardadas);
-      setAreas(areasGuardadas);
-    } catch (error) {
-      console.error("Error al cargar vacantes o áreas:", error);
-    }
-  };
-
-  cargarVacantesYAreas();
-}, []);
+const [vacantes, setVacantes] = useState(vacantesIniciales);
 const [candidatos, setCandidatos] = useState([]);
 const [vistaCandidatos, setVistaCandidatos] = useState("En proceso");
 useEffect(() => {
@@ -104,7 +98,7 @@ useEffect(() => {
       const candidatosGuardados = await obtenerCandidatos();
 const nombresEtapas = {
   APLICACION: "Aplicación",
-  REVISION_CV: "Referencias",
+  REVISION_CV: "Revisión CV",
   ENTREVISTA: "Entrevista",
   EVALUACION: "Evaluación",
   OFERTA: "Oferta",
@@ -221,21 +215,10 @@ const guardarCandidato = async (nuevoCandidato) => {
     const datosBackend = {
       nombre: nuevoCandidato.nombre,
       apellido: nuevoCandidato.apellido,
-
-identidad: nuevoCandidato.identidad,
-
       email: nuevoCandidato.correo,
       telefono: nuevoCandidato.telefono,
-
-direccion: nuevoCandidato.direccion,
-referencias: nuevoCandidato.referencias,
-
       puestoAplicado: nuevoCandidato.puesto,
-      vacanteId: nuevoCandidato.vacanteId,
       cv: nuevoCandidato.cv,
-
-foto: nuevoCandidato.foto,
-
     };
 
     const candidatoGuardado = await crearCandidato(datosBackend);
@@ -256,7 +239,7 @@ const actualizarCandidato = async (candidatoActualizado) => {
 
 const etapasBackend = {
   "Aplicación": "APLICACION",
-"Referencias": "REVISION_CV",
+  "Revisión CV": "REVISION_CV",
   "Entrevista": "ENTREVISTA",
   "Evaluación": "EVALUACION",
   "Oferta": "OFERTA",
@@ -292,64 +275,43 @@ await actualizarEstadoCandidato(
     );
 
     setCandidatoSeleccionado(candidatoActualizado);
-    return true;
   } catch (error) {
     console.error("Error al actualizar candidato:", error);
     alert("No se pudo actualizar el candidato.");
-    return false;
   }
 };
 const [mostrarFormularioVacante, setMostrarFormularioVacante] = useState(false);
-const [filtroVacantes, setFiltroVacantes] = useState("DISPONIBLE");
 
 const [nuevaVacante, setNuevaVacante] = useState({
   nombre: "",
-  areaId: "",
+  area: "Cocina",
   descripcion: "",
-  plazasTotales: 1,
 });
 
-const guardarVacante = async (evento) => {
+const guardarVacante = (evento) => {
   evento.preventDefault();
 
-  if (
-    !nuevaVacante.nombre.trim() ||
-    !nuevaVacante.descripcion.trim() ||
-    !nuevaVacante.areaId
-  ) {
+  if (!nuevaVacante.nombre.trim() || !nuevaVacante.descripcion.trim()) {
     return;
   }
 
-  try {
-    setGuardandoVacante(true);
+  setVacantes((anteriores) => [
+    ...anteriores,
+    {
+      id: Date.now(),
+      nombre: nuevaVacante.nombre.trim(),
+      area: nuevaVacante.area,
+      descripcion: nuevaVacante.descripcion.trim(),
+    },
+  ]);
 
-   
-const vacanteCreada = await crearVacante({
-  nombre: nuevaVacante.nombre.trim(),
-  areaId: Number(nuevaVacante.areaId),
-  descripcion: nuevaVacante.descripcion.trim(),
-  plazasTotales: Number(nuevaVacante.plazasTotales ?? 1),
-});
+  setNuevaVacante({
+    nombre: "",
+    area: "Cocina",
+    descripcion: "",
+  });
 
-    setVacantes((anteriores) => [vacanteCreada, ...anteriores]);
-
-    setNuevaVacante({
-      nombre: "",
-      areaId: "",
-      descripcion: "",
-      plazasTotales: 1,
-    });
-
-    setMostrarFormularioVacante(false);
-  } catch (error) {
-    console.error("Error al guardar vacante:", error);
-    alert(
-      error.response?.data?.mensaje ||
-        "No se pudo guardar la vacante. Revisa la conexión con el backend."
-    );
-  } finally {
-    setGuardandoVacante(false);
-  }
+  setMostrarFormularioVacante(false);
 };
 
   const candidatosActivos = candidatos.filter(
@@ -397,71 +359,17 @@ const vacanteCreada = await crearVacante({
         </div>
       </div>
 
-      
-<div
-  style={{
-    display: "flex",
-    gap: "10px",
-    marginBottom: "18px",
-    flexWrap: "wrap",
-  }}
->
-  {[
-    { valor: "DISPONIBLE", texto: "Disponibles" },
-    { valor: "CUBIERTA", texto: "Cubiertas" },
-   
-  ].map((opcion) => (
-    <button
-      key={opcion.valor}
-      type="button"
-      className={
-        filtroVacantes === opcion.valor
-          ? "reclutamiento-btn-principal"
-          : "reclutamiento-btn-secundario"
-      }
-      aria-pressed={filtroVacantes === opcion.valor}
-      onClick={() => setFiltroVacantes(opcion.valor)}
-    >
-      {opcion.texto}
-    </button>
-  ))}
-</div>
-
-<section className="reclutamiento-vacantes">
-  {vacantes
-    .filter(
-      (vacante) => vacante.estadoVacante === filtroVacantes
-    )
-    .map((vacante) => (
-      <article
-        className="reclutamiento-vacante"
-        key={vacante.id}
-      >
-        <span className="reclutamiento-etiqueta">
-          {vacante.area?.nombre}
-        </span>
-
-        <h3>{vacante.nombre}</h3>
-        <p>{vacante.descripcion}</p>
-
-        <p style={{ marginTop: "12px", fontSize: "13px" }}>
-          <strong>Plazas cubiertas:</strong>{" "}
-          {vacante.plazasCubiertas ?? 0} de{" "}
-          {vacante.plazasTotales ?? 1}
-        </p>
-      </article>
-    ))}
-
-  {vacantes.filter(
-    (vacante) => vacante.estadoVacante === filtroVacantes
-  ).length === 0 && (
-    <p style={{ gridColumn: "1 / -1", color: "#64748b" }}>
-      No hay vacantes en esta categoría.
-    </p>
-  )}
-</section>
-
-
+      <section className="reclutamiento-vacantes">
+        {vacantes.map((vacante) => (
+          <article className="reclutamiento-vacante" key={vacante.id}>
+            <span className="reclutamiento-etiqueta">
+              {vacante.area}
+            </span>
+            <h3>{vacante.nombre}</h3>
+            <p>{vacante.descripcion}</p>
+          </article>
+        ))}
+      </section>
 
       <section className="reclutamiento-pipeline">
         <h2>PIPELINE DE SELECCIÓN</h2>
@@ -623,21 +531,18 @@ const vacanteCreada = await crearVacante({
         <label htmlFor="vacante-area">ÁREA</label>
         <select
           id="vacante-area"
-          required
-          value={nuevaVacante.areaId}
+          value={nuevaVacante.area}
           onChange={(evento) =>
             setNuevaVacante({
               ...nuevaVacante,
-              areaId: evento.target.value,
+              area: evento.target.value,
             })
           }
         >
-          <option value="">Selecciona un área</option>
-          {areas.map((area) => (
-            <option key={area.id} value={area.id}>
-              {area.nombre}
-            </option>
-          ))}
+          <option value="Cocina">Cocina</option>
+          <option value="Servicio">Servicio</option>
+          <option value="Domicilios">Domicilios</option>
+          <option value="Administración">Administración</option>
         </select>
 
         <label htmlFor="vacante-descripcion">DESCRIPCIÓN</label>
@@ -654,26 +559,6 @@ const vacanteCreada = await crearVacante({
           }
         />
 
-
-<label htmlFor="vacante-plazas">NÚMERO DE PLAZAS</label>
-<input
-  id="vacante-plazas"
-  type="number"
-  min="1"
-  step="1"
-  required
-  value={nuevaVacante.plazasTotales}
-  onChange={(evento) =>
-    setNuevaVacante({
-      ...nuevaVacante,
-      plazasTotales: evento.target.value,
-    })
-  }
-/>
-
-
-
-
         <div className="reclutamiento-modal-acciones">
           <button
             type="button"
@@ -683,12 +568,8 @@ const vacanteCreada = await crearVacante({
             Cancelar
           </button>
 
-          <button
-            type="submit"
-            className="reclutamiento-btn-principal"
-            disabled={guardandoVacante}
-          >
-            {guardandoVacante ? "Guardando..." : "Guardar vacante"}
+          <button type="submit" className="reclutamiento-btn-principal">
+            Guardar vacante
           </button>
         </div>
       </form>
@@ -698,10 +579,7 @@ const vacanteCreada = await crearVacante({
 
 {mostrarFormularioCandidato && (
   <FormularioCandidato
-   vacantes={vacantes.filter(
-  (vacante) =>
-    vacante.estadoVacante === "DISPONIBLE"
-)}
+    vacantes={vacantes}
     onGuardar={guardarCandidato}
     onCerrar={() => setMostrarFormularioCandidato(false)}
   />

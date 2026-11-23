@@ -6,7 +6,6 @@ import {
   crearCandidato,
   actualizarCandidato,
   verCV,
-  verFoto,
  crearEntrevista,
   actualizarEntrevista,
   cambiarEstadoEntrevista,
@@ -21,34 +20,17 @@ import {
 } from "./reclutamiento.controller.js";
 
 import { subirDocumentoEntrevista } from "../../uploadEntrevista.js";
-import { obtenerVacantes, crearVacante } from "./vacantes.controller.js"
 
 
 const router = Router();
 
-// Vacantes (van antes de las rutas con :id)
-router.get("/vacantes", verificarToken, permitirRoles("ADMINISTRADOR"), obtenerVacantes);
-router.post("/vacantes", verificarToken, permitirRoles("ADMINISTRADOR"), crearVacante);
 
-
-router.post(
-  "/",
-  subirCV.fields([
-    { name: "cv", maxCount: 1 },
-    { name: "foto", maxCount: 1 },
-  ]),
-  crearCandidato
-);
-
+router.post("/", subirCV.single("cv"), crearCandidato);
 router.get("/", verificarToken, permitirRoles("ADMINISTRADOR"), obtenerCandidatos);
 
 router.put("/:id", verificarToken, permitirRoles("ADMINISTRADOR"), actualizarCandidato);
 
 router.get("/:id/cv", verificarToken, permitirRoles("ADMINISTRADOR"), verCV);
-
-
-router.get("/:id/foto", verificarToken, permitirRoles("ADMINISTRADOR"), verFoto);
-
 
 router.post("/:id/entrevistas", verificarToken, permitirRoles("ADMINISTRADOR"), crearEntrevista);
 

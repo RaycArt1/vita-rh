@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./PerfilCandidato.css";
 import {
   crearEntrevista,
@@ -7,14 +7,12 @@ import {
   cambiarEstadoEntrevista,
   subirDocumentoEntrevista,
   obtenerDocumentoEntrevista,
-  obtenerFoto,
   guardarEvaluacion as guardarEvaluacionEnServidor,
   guardarOferta as guardarOfertaEnServidor,
   responderOferta as responderOfertaEnServidor,
   descartarCandidato as descartarCandidatoEnServidor,
   obtenerCatalogosContratacion,
 contratarCandidato as contratarCandidatoEnServidor,
-obtenerCV,
 } from "../services/reclutamientoService";
 
 const secciones = [
@@ -32,67 +30,6 @@ export default function PerfilCandidato({
   onCerrar,
 }) {
   const [paso, setPaso] = useState(0);
-
-
-
-const [fotoUrl, setFotoUrl] = useState(null);
-
-useEffect(() => {
-  let cancelado = false;
-  let urlTemporal = null;
-
-  setFotoUrl(null);
-
-  if (candidato.fotoArchivo) {
-    obtenerFoto(candidato.id)
-      .then((archivo) => {
-        if (cancelado) return;
-
-        urlTemporal = URL.createObjectURL(archivo);
-        setFotoUrl(urlTemporal);
-      })
-      .catch((error) => {
-        console.error("Error al cargar fotografía:", error);
-      });
-  }
-
-  return () => {
-    cancelado = true;
-    if (urlTemporal) {
-      URL.revokeObjectURL(urlTemporal);
-    }
-  };
-}, [candidato.id, candidato.fotoArchivo]);
-
-
-
-const abrirCV = async () => {
-  const ventana = window.open("", "_blank");
-
-  if (!ventana) {
-    alert("Permite las ventanas emergentes para ver el CV.");
-    return;
-  }
-
-  ventana.opener = null;
-
-  try {
-    const archivo = await obtenerCV(candidato.id);
-    const url = URL.createObjectURL(archivo);
-
-    ventana.location.href = url;
-
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-  } catch (error) {
-    ventana.close();
-    console.error("Error al abrir CV:", error);
-
-    alert(
-      error.response?.data?.mensaje ||
-      "No se pudo abrir el CV."
-    );
-  }
-};
 
 
 const [mostrarFormularioContratacion, setMostrarFormularioContratacion] =
@@ -118,9 +55,7 @@ const abrirFormularioContratacion = async () => {
 
     setAreasContratacion(areas);
     setDatosContratacion({
-     
-      identidad: candidato.identidad || "",
-
+      identidad: "",
       telefono: candidato.telefono || "",
       correo: candidato.correo || candidato.email || "",
       areaId: "",
@@ -178,11 +113,9 @@ const confirmarContratacion = async (e) => {
 
     alert("¡Candidato contratado y registrado como empleado!");
 
-    
-setMostrarFormularioContratacion(false);
-onCerrar?.();
-window.location.reload();
-
+    setMostrarFormularioContratacion(false);
+    await onActualizar?.();
+    onCerrar?.();
   } catch (error) {
     alert(
       error.response?.data?.mensaje ||
@@ -232,9 +165,8 @@ const registrarDescarte = async () => {
 
     alert("Candidato descartado correctamente.");
 
-    // await onActualizar?.();
+    await onActualizar?.();
     onCerrar?.();
-    window.location.reload();
   } catch (error) {
     alert(
       error.response?.data?.mensaje ||
@@ -639,92 +571,23 @@ const responderOferta = async (respuesta) => {
 
 const etapasSeleccion = [
   "Aplicación",
- "Referencias",
+  "Revisión CV",
   "Entrevista",
   "Evaluación",
   "Oferta",
   "Contratado",
 ];
 
-
-const avanzarEtapa = async () => {
+const avanzarEtapa = () => {
   const indiceActual = etapasSeleccion.indexOf(candidato.estado);
 
-  if (indiceActual < 0 || indiceActual >= 4) return;
-
-  const siguienteEtapa = etapasSeleccion[indiceActual + 1];
-
-  if (
-    siguienteEtapa === "Evaluación" &&
-    candidato.entrevista?.estadoEntrevista !== "REALIZADA"
-  ) {
-    alert("Primero debes completar la entrevista.");
-    return;
-  }
-
-  
-if (
-  siguienteEtapa === "Oferta" &&
-  candidato.evaluacion?.resultado !== "APROBADO"
-) {
-  if (candidato.evaluacion?.resultado === "REPROBADO") {
-    alert(
-      "No es posible avanzar a Oferta porque el candidato no aprobó la evaluación. Puedes mantenerlo en esta etapa o descartarlo registrando el motivo."
-    );
-  } else {
-    alert(
-      "La evaluación aún no ha sido completada. Registra el resultado antes de avanzar a la etapa de Oferta."
-    );
-  }
-  return;
-}
-
-
-
-  const guardado = await onActualizar({
-    ...candidato,
-    estado: siguienteEtapa,
-  });
-
-  if (guardado === true) {
-    setPaso(indiceActual + 1);
+  if (indiceActual >= 0 && indiceActual < etapasSeleccion.length - 1) {
+    onActualizar({
+      ...candidato,
+      estado: etapasSeleccion[indiceActual + 1],
+    });
   }
 };
-
-
-
-const retrocederEtapa = async () => {
-  const indiceActual = etapasSeleccion.indexOf(candidato.estado);
-
-  if (
-    indiceActual <= 0 ||
-    candidato.estado === "Contratado" ||
-    candidato.estado === "Descartado"
-  ) {
-    return;
-  }
-
-  const etapaAnterior = etapasSeleccion[indiceActual - 1];
-
-  const confirmado = window.confirm(
-    `¿Deseas retroceder a ${candidato.nombre} a la etapa "${etapaAnterior}"?\n\nLa información registrada se conservará.`
-  );
-
-  if (!confirmado) return;
-
-  const guardado = await onActualizar({
-    ...candidato,
-    estado: etapaAnterior,
-  });
-
-  if (guardado === true) {
-    setPaso(indiceActual - 1);
-  }
-};
-
-
-
-
   const iniciales = candidato.nombre
     .split(" ")
     .slice(0, 2)
@@ -750,24 +613,7 @@ const retrocederEtapa = async () => {
 
         <div className="pc-cuerpo">
           <div className="pc-candidato">
-           
-<div className="pc-avatar">
-  {fotoUrl ? (
-    <img
-      src={fotoUrl}
-      alt={`Fotografía de ${candidato.nombre}`}
-      style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "cover",
-        borderRadius: "50%",
-      }}
-    />
-  ) : (
-    iniciales
-  )}
-</div>
-
+            <div className="pc-avatar">{iniciales}</div>
 
             <div className="pc-identidad">
               <h3>{candidato.nombre}</h3>
@@ -778,20 +624,14 @@ const retrocederEtapa = async () => {
               <span className="pc-estado">{candidato.estado}</span>
             </div>
 
-       
-<button
-  type="button"
-  className="pc-boton-secundario"
-  onClick={retrocederEtapa}
-  disabled={
-    etapasSeleccion.indexOf(candidato.estado) <= 0 ||
-    candidato.estado === "Contratado" ||
-    candidato.estado === "Descartado"
-  }
->
-  ← Retroceder etapa
-</button>
-</div>
+            <button
+              type="button"
+              className="pc-boton-secundario"
+              onClick={() => setPaso(Math.max(0, paso - 1))}
+            >
+              ← Retroceder
+            </button>
+          </div>
 
           <div className="pc-pasos">
             {secciones.map((seccion, indice) => (
@@ -830,32 +670,21 @@ const retrocederEtapa = async () => {
                   <strong>{candidato.puesto}</strong>
                 </div>
 
-               
-<div className="pc-ancho-completo">
-  <small>Dirección</small>
-  <strong>{candidato.direccion || "No registrada"}</strong>
-</div>
-
+                <div className="pc-ancho-completo">
+                  <small>Experiencia / Observaciones</small>
+                  <strong>{candidato.notas || "Sin observaciones"}</strong>
+                </div>
 
                 <div className="pc-ancho-completo">
                   <small>Currículum</small>
                  {(candidato.cv || candidato.cvArchivo) ? (
-                       
-<button
-  type="button"
-  onClick={abrirCV}
-  style={{
-    background: "none",
-    border: "none",
-    color: "#2563eb",
-    textDecoration: "underline",
-    cursor: "pointer",
-    padding: 0,
-  }}
->
-  Ver CV
-</button>
-
+                    <a
+                     href={`http://localhost:3000/api/reclutamiento/${candidato.id}/cv`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Ver CV
+                    </a>
                   ) : (
                     <strong>No hay CV adjunto</strong>
                   )}
@@ -870,7 +699,10 @@ const retrocederEtapa = async () => {
                   <strong>{candidato.referencias || "No registrada"}</strong>
                 </div>
 
-                
+                <div className="pc-ancho-completo">
+                  <small>Dirección</small>
+                  <strong>{candidato.direccion || "No registrada"}</strong>
+                </div>
               </div>
             )}
 
@@ -1030,12 +862,8 @@ const retrocederEtapa = async () => {
     : "Pendiente"}
 </p>
 
-
-{candidato.estado !== "Descartado" &&
-  candidato.estado !== "Contratado" &&
-  (candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
-    "PENDIENTE" && (
-
+{(candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
+  "PENDIENTE" && (
   <div className="pc-botones-oferta">
     <button
       type="button"
@@ -1078,12 +906,8 @@ const retrocederEtapa = async () => {
 
 
        
-
-{candidato.estado !== "Descartado" &&
-  candidato.estado !== "Contratado" &&
-  (candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
-    "PENDIENTE" && (
-
+{(candidato.entrevista.estadoEntrevista || "PENDIENTE") ===
+  "PENDIENTE" && (
   <button
     type="button"
     className="pc-boton-principal"
@@ -1098,8 +922,6 @@ const retrocederEtapa = async () => {
       <div>
         <p>Este candidato todavía no tiene una entrevista registrada.</p>
 
-{candidato.estado !== "Descartado" && candidato.estado !== "Contratado" && (
-
         <button
           type="button"
 
@@ -1108,7 +930,6 @@ const retrocederEtapa = async () => {
         >
           + Registrar entrevista
         </button>
-        )}
       </div>
     )}
   </div>
@@ -1137,7 +958,25 @@ const retrocederEtapa = async () => {
           />
         </label>
 
-    
+        <label>
+          CLASIFICACIÓN ADICIONAL
+          <select
+            value={evaluacion.clasificacion}
+            onChange={(e) =>
+              setEvaluacion({
+                ...evaluacion,
+                clasificacion: e.target.value,
+              })
+            }
+          >
+            <option value="Informativo">Informativo</option>
+            <option value="Bueno">Bueno</option>
+            <option value="Excelente">Excelente</option>
+            <option value="Requiere seguimiento">
+              Requiere seguimiento
+            </option>
+          </select>
+        </label>
 
 <label>
   RESULTADO DE LA EVALUACIÓN
@@ -1204,7 +1043,10 @@ const retrocederEtapa = async () => {
         </div>
 
         <div className="pc-detalles-evaluacion">
-         
+          <p>
+            <strong>Clasificación:</strong>{" "}
+            {candidato.evaluacion?.clasificacion ?? "Informativo"}
+          </p>
 
 <p>
   <strong>Resultado:</strong>{" "}
@@ -1221,8 +1063,6 @@ const retrocederEtapa = async () => {
           </p>
         </div>
 
-{candidato.estado !== "Descartado" && candidato.estado !== "Contratado" && (
-
        <button
        type="button"
        className="pc-boton-principal"
@@ -1233,9 +1073,6 @@ const retrocederEtapa = async () => {
 >
       Modificar evaluación
       </button>
-
-)}
-
       {candidato.entrevista?.estadoEntrevista !== "REALIZADA" && (
   <p>
     Primero debes realizar la entrevista para evaluar al candidato.
@@ -1448,7 +1285,6 @@ const retrocederEtapa = async () => {
 <button
   type="button"
   className="pc-boton-principal"
-  style={{ display: mostrarFormularioContratacion ? "none" : undefined }}
   disabled={
     cargandoContratacion ||
     guardandoContratacion ||
@@ -1466,7 +1302,6 @@ const retrocederEtapa = async () => {
       <button
         type="button"
         className="pc-boton-secundario"
-        style={{ display: mostrarFormularioContratacion ? "none" : undefined }}
         disabled={
   descartando ||
   candidato.estado === "Contratado" ||
@@ -1481,22 +1316,30 @@ const retrocederEtapa = async () => {
 )}
 
 
-
 {mostrarFormularioContratacion && (
   <form
     onSubmit={confirmarContratacion}
-    className="pc-contratacion-formulario"
+    style={{
+      marginTop: "24px",
+      padding: "20px",
+      border: "1px solid #ddd",
+      borderRadius: "10px",
+      textAlign: "left",
+    }}
   >
-    <div className="pc-contratacion-encabezado">
-      <h3>Registro de contratación</h3>
-      <p>
-        Completa los datos para registrar al nuevo empleado.
-      </p>
-    </div>
+    <h3>Registro de contratación</h3>
+    <p>Completa los datos para registrar al nuevo empleado.</p>
 
-    <div className="pc-contratacion-grid">
-      <label className="pc-contratacion-campo">
-        <span>Identidad</span>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: "15px",
+        marginTop: "15px",
+      }}
+    >
+      <label>
+        Identidad
         <input
           type="text"
           required
@@ -1511,8 +1354,8 @@ const retrocederEtapa = async () => {
         />
       </label>
 
-      <label className="pc-contratacion-campo">
-        <span>Teléfono</span>
+      <label>
+        Teléfono
         <input
           type="tel"
           required
@@ -1526,8 +1369,8 @@ const retrocederEtapa = async () => {
         />
       </label>
 
-      <label className="pc-contratacion-campo">
-        <span>Correo electrónico</span>
+      <label>
+        Correo electrónico
         <input
           type="email"
           required
@@ -1541,8 +1384,8 @@ const retrocederEtapa = async () => {
         />
       </label>
 
-      <label className="pc-contratacion-campo">
-        <span>Área</span>
+      <label>
+        Área
         <select
           required
           value={datosContratacion.areaId}
@@ -1563,8 +1406,8 @@ const retrocederEtapa = async () => {
         </select>
       </label>
 
-      <label className="pc-contratacion-campo">
-        <span>Puesto</span>
+      <label>
+        Puesto
         <select
           required
           value={datosContratacion.puestoId}
@@ -1580,8 +1423,7 @@ const retrocederEtapa = async () => {
           {(
             areasContratacion.find(
               (area) =>
-                String(area.id) ===
-                String(datosContratacion.areaId)
+                String(area.id) === String(datosContratacion.areaId)
             )?.puestos || []
           ).map((puesto) => (
             <option key={puesto.id} value={puesto.id}>
@@ -1592,32 +1434,28 @@ const retrocederEtapa = async () => {
       </label>
     </div>
 
-    <div className="pc-contratacion-resumen">
-      <div>
-        <span>Salario ofrecido</span>
-        <strong>
-          L{" "}
-          {Number(
-            candidato.oferta?.salario || 0
-          ).toLocaleString("es-HN")}
-        </strong>
-      </div>
+    <p style={{ marginTop: "18px" }}>
+      <strong>Salario ofrecido:</strong>{" "}
+      L {Number(candidato.oferta?.salario || 0).toLocaleString("es-HN")}
+    </p>
 
-      <div>
-        <span>Fecha de ingreso</span>
-        <strong>
-          {candidato.oferta?.fechaInicio
-            ? new Date(
-                candidato.oferta.fechaInicio
-              ).toLocaleDateString("es-HN", {
-                timeZone: "UTC",
-              })
-            : "No registrada"}
-        </strong>
-      </div>
-    </div>
+    <p>
+      <strong>Fecha de ingreso:</strong>{" "}
+      {candidato.oferta?.fechaInicio
+        ? new Date(candidato.oferta.fechaInicio).toLocaleDateString(
+            "es-HN",
+            { timeZone: "UTC" }
+          )
+        : "No registrada"}
+    </p>
 
-    <div className="pc-contratacion-botones">
+    <div
+      style={{
+        display: "flex",
+        gap: "12px",
+        marginTop: "20px",
+      }}
+    >
       <button
         type="submit"
         className="pc-boton-principal"
@@ -1632,9 +1470,7 @@ const retrocederEtapa = async () => {
         type="button"
         className="pc-boton-secundario"
         disabled={guardandoContratacion}
-        onClick={() =>
-          setMostrarFormularioContratacion(false)
-        }
+        onClick={() => setMostrarFormularioContratacion(false)}
       >
         Cancelar
       </button>
@@ -1643,14 +1479,11 @@ const retrocederEtapa = async () => {
 )}
 
 
-
-
   
 
           </div>
 
           <div className="pc-acciones">
-            <div style={{ display: "flex", gap: "8px" }}>
             <button
               type="button"
               className="pc-boton-secundario"
@@ -1661,31 +1494,19 @@ const retrocederEtapa = async () => {
               ← Anterior
             </button>
 
-
-<button
-  type="button"
-  className="pc-boton-secundario"
-  disabled={paso === 5}
-  onClick={() => setPaso(paso + 1)}
->
-  Siguiente →
-</button>
-
-</div>
-
-
-
-
             <div className="pc-acciones-derecha">
-             
+              <button
+                type="button"
+                className="pc-boton-secundario"
+                onClick={onCerrar}
+              >
+                Cancelar
+              </button>
 
               
-
 {paso !== 5 &&
-  paso === etapasSeleccion.indexOf(candidato.estado) &&
   candidato.estado !== "Contratado" &&
   candidato.estado !== "Descartado" && (
-
     <button
       type="button"
       className="pc-boton-secundario"
@@ -1697,45 +1518,31 @@ const retrocederEtapa = async () => {
   )}
 
 
-{paso === 4 &&
-  candidato.estado === "Oferta" &&
-  candidato.oferta?.estado === "Aceptada" && (
-    <button
-      type="button"
-      className="pc-boton-principal"
-      onClick={() => setPaso(5)}
-    >
-      Avanzar a Contratación →
-    </button>
-)}
-
-
-
-{paso < 5 &&
-  paso === etapasSeleccion.indexOf(candidato.estado) &&
-  etapasSeleccion.includes(candidato.estado) &&
+{etapasSeleccion.includes(candidato.estado) &&
   candidato.estado !== "Contratado" &&
-  candidato.estado !== "Oferta" &&
-  candidato.estado !== "Descartado" && (
-
-
+  candidato.estado !== "Oferta" && (
     <button
       type="button"
       className="pc-boton-principal"
       onClick={avanzarEtapa}
     >
-     
-Avanzar a {etapasSeleccion[etapasSeleccion.indexOf(candidato.estado) + 1]} →
-
+      Avanzar etapa
     </button>
   )}
 
-             
+              {paso < 5 && (
+                <button
+                  type="button"
+                  className="pc-boton-principal"
+                  onClick={() => setPaso(paso + 1)}
+                >
+                  Siguiente →
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
-    
   );
 }

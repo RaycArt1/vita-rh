@@ -29,80 +29,24 @@ export const obtenerCandidatos = async (req, res) => {
     });
   }
 };
-
 export const crearCandidato = async (req, res) => {
   try {
     const { nombre, apellido, telefono, email, puestoAplicado } = req.body;
-
-const vacanteIdTexto = req.body.vacanteId;
-let vacanteId = null;
-
-if (
-  vacanteIdTexto !== undefined &&
-  vacanteIdTexto !== null &&
-  String(vacanteIdTexto).trim() !== ""
-) {
-  vacanteId = Number(vacanteIdTexto);
-
-  if (!Number.isSafeInteger(vacanteId) || vacanteId <= 0) {
-    return res.status(400).json({
-      mensaje: "El identificador de la vacante no es válido",
-    });
-  }
-
-  const vacante = await prisma.vacante.findUnique({
-    where: { id: vacanteId },
-  });
-
-  if (!vacante || !vacante.activa) {
-    return res.status(400).json({
-      mensaje: "La vacante seleccionada no está disponible",
-    });
-  }
-
-
-const plazasCubiertas = await prisma.candidato.count({
-  where: {
-    vacanteId: vacante.id,
-    estado: "CONTRATADO",
-    empleado: { isNot: null },
-  },
-});
-
-if (plazasCubiertas >= vacante.plazasTotales) {
-  return res.status(409).json({
-    mensaje: "Esta vacante ya tiene todas sus plazas cubiertas.",
-  });
-}
-
-
-}
-
 
     if (!nombre?.trim() || !apellido?.trim() || !puestoAplicado?.trim()) {
       return res.status(400).json({
         mensaje: "Nombre, apellido y puesto son obligatorios",
       });
     }
-console.log("ID de vacante recibido:", req.body.vacanteId);
+
     const candidato = await prisma.candidato.create({
       data: {
         nombre: nombre.trim(),
         apellido: apellido.trim(),
-
-identidad: req.body.identidad?.trim() || null,
-
         telefono: telefono?.trim() || null,
-        direccion: req.body.direccion?.trim() || null,
-        referencias: req.body.referencias?.trim() || null,
-
         email: email?.trim() || null,
         puestoAplicado: puestoAplicado.trim(),
-        vacanteId: vacanteId,
-       
-cvArchivo: req.files?.cv?.[0]?.filename || req.file?.filename || null,
-fotoArchivo: req.files?.foto?.[0]?.filename || null,
-
+        cvArchivo: req.file?.filename || null,
       },
     });
 
@@ -115,10 +59,6 @@ fotoArchivo: req.files?.foto?.[0]?.filename || null,
     });
   }
 };
-
-
-
-
 
 export const actualizarCandidato = async (req, res) => {
   try {
@@ -178,106 +118,6 @@ if (etapa !== undefined && !etapasPermitidas.includes(etapa)) {
   });
 }
 
-
-if (etapa === "EVALUACION") {
-  const entrevista = await prisma.entrevista.findFirst({
-    where: { candidatoId: id },
-    orderBy: { id: "desc" },
-  });
-
-  if (!entrevista || entrevista.estadoEntrevista !== "REALIZADA") {
-    return res.status(400).json({
-      mensaje: "Primero debes completar la entrevista antes de avanzar a Evaluación.",
-    });
-  }
-}
-
-
-if (etapa === "OFERTA") {
-  const evaluacion = await prisma.evaluacion.findUnique({
-    where: { candidatoId: id },
-  });
-
-
-if (evaluacion?.resultado === "REPROBADO") {
-  return res.status(400).json({
-    mensaje: "No es posible avanzar a Oferta porque el candidato no aprobó la evaluación. Puedes mantenerlo en esta etapa o descartarlo registrando el motivo.",
-  });
-}
-
-if (!evaluacion || evaluacion.resultado !== "APROBADO") {
-  return res.status(400).json({
-    mensaje: "La evaluación aún no ha sido completada. Registra el resultado antes de avanzar a la etapa de Oferta.",
-  });
-}
-
-}
-
-
-
-if (etapa === "CONTRATADO") {
-  return res.status(400).json({
-    mensaje: "Para contratar a un candidato debes completar el registro correspondiente en la sección Contratación.",
-  });
-}
-
-
-
-
-if (etapa !== undefined || estado !== undefined) {
-
-  const candidatoActual = await prisma.candidato.findUnique({
-    where: { id },
-   select: { etapa: true, estado: true },
-  });
-
-  if (!candidatoActual) {
-    return res.status(404).json({
-      mensaje: "Candidato no encontrado.",
-    });
-  }
-
-
-if (
-  candidatoActual.estado === "DESCARTADO" ||
-  candidatoActual.estado === "CONTRATADO"
-) {
-  return res.status(400).json({
-    mensaje: "No se puede cambiar la etapa de un candidato cuyo proceso ya ha finalizado.",
-  });
-}
-
-
-  const ordenEtapas = [
-    "APLICACION",
-    "REVISION_CV",
-    "ENTREVISTA",
-    "EVALUACION",
-    "OFERTA",
-    "CONTRATADO",
-  ];
-
-  const posicionActual = ordenEtapas.indexOf(candidatoActual.etapa);
-  const posicionNueva = ordenEtapas.indexOf(etapa);
-
-  if (posicionActual === -1) {
-    return res.status(400).json({
-      mensaje: "La etapa actual del candidato no es válida.",
-    });
-  }
-
-  if (posicionNueva > posicionActual + 1) {
-    return res.status(400).json({
-      mensaje: "No puedes saltarte etapas del proceso de reclutamiento.",
-    });
-  }
-}
-
-
-
-
-
-
     const candidato = await prisma.candidato.update({
       where: { id },
       data: {
@@ -335,47 +175,6 @@ export const verCV = async (req, res) => {
   }
 };
 
-
-
-export const verFoto = async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-
-    if (!Number.isInteger(id) || id <= 0) {
-      return res.status(400).json({
-        mensaje: "ID de candidato inválido",
-      });
-    }
-
-    const candidato = await prisma.candidato.findUnique({
-      where: { id },
-      select: { fotoArchivo: true },
-    });
-
-    if (!candidato || !candidato.fotoArchivo) {
-      return res.status(404).json({
-        mensaje: "Fotografía no encontrada",
-      });
-    }
-
-    const rutaFoto = path.resolve(
-      process.cwd(),
-      "uploads",
-      "fotos",
-      path.basename(candidato.fotoArchivo)
-    );
-
-    res.sendFile(rutaFoto);
-  } catch (error) {
-    console.error("Error al consultar fotografía:", error);
-    res.status(500).json({
-      mensaje: "No se pudo consultar la fotografía",
-    });
-  }
-};
-
-
-
 export const crearEntrevista = async (req, res) => {
   try {
     const candidatoId = Number(req.params.id);
@@ -395,28 +194,6 @@ export const crearEntrevista = async (req, res) => {
         mensaje: "Verifica la fecha y la fase de la entrevista."
       });
     }
-
-  
-const candidatoActual = await prisma.candidato.findUnique({
-  where: { id: candidatoId },
-  select: { estado: true },
-});
-
-if (!candidatoActual) {
-  return res.status(404).json({
-    mensaje: "Candidato no encontrado.",
-  });
-}
-
-if (
-  candidatoActual.estado === "DESCARTADO" ||
-  candidatoActual.estado === "CONTRATADO"
-) {
-  return res.status(400).json({
-    mensaje: "No es posible registrar una entrevista para un candidato cuyo proceso ya finalizó.",
-  });
-}
-
 
 const modalidadesPermitidas = [
   "PRESENCIAL",
@@ -512,30 +289,6 @@ export const actualizarEntrevista = async (req, res) => {
         mensaje: "Identificador de entrevista inválido.",
       });
     }
-
-
-const candidatoActual = await prisma.candidato.findUnique({
-  where: { id: candidatoId },
-  select: { estado: true },
-});
-
-if (!candidatoActual) {
-  return res.status(404).json({
-    mensaje: "Candidato no encontrado.",
-  });
-}
-
-if (
-  candidatoActual.estado === "DESCARTADO" ||
-  candidatoActual.estado === "CONTRATADO"
-) {
-  return res.status(400).json({
-    mensaje: "No es posible modificar la entrevista de un candidato cuyo proceso ya finalizó.",
-  });
-}
-
-
-
 
     if (
       !fecha ||
@@ -666,28 +419,6 @@ export const cambiarEstadoEntrevista = async (req, res) => {
         mensaje: "Entrevista no encontrada.",
       });
     }
-
-
-const candidatoActual = await prisma.candidato.findUnique({
-  where: { id: candidatoId },
-  select: { estado: true },
-});
-
-if (!candidatoActual) {
-  return res.status(404).json({
-    mensaje: "Candidato no encontrado.",
-  });
-}
-
-if (
-  candidatoActual.estado === "DESCARTADO" ||
-  candidatoActual.estado === "CONTRATADO"
-) {
-  return res.status(400).json({
-    mensaje: "No es posible cambiar el estado de una entrevista de un candidato cuyo proceso ya finalizó.",
-  });
-}
-
 
     if (entrevista.estadoEntrevista !== "PENDIENTE") {
       return res.status(409).json({
@@ -869,26 +600,6 @@ export const guardarEvaluacion = async (req, res) => {
       });
     }
 
-const candidatoActual = await prisma.candidato.findUnique({
-  where: { id: candidatoId },
-  select: { estado: true },
-});
-
-if (!candidatoActual) {
-  return res.status(404).json({
-    mensaje: "Candidato no encontrado.",
-  });
-}
-
-if (
-  candidatoActual.estado === "DESCARTADO" ||
-  candidatoActual.estado === "CONTRATADO"
-) {
-  return res.status(400).json({
-    mensaje: "No es posible modificar la evaluación de un candidato cuyo proceso ya finalizó.",
-  });
-}
-
     const nota = Number(puntuacion);
 
     if (!Number.isInteger(nota) || nota < 1 || nota > 10) {
@@ -991,30 +702,6 @@ export const guardarOferta = async (req, res) => {
         mensaje: "Identificador de candidato inválido.",
       });
     }
-
-
-
-const candidatoActual = await prisma.candidato.findUnique({
-  where: { id: candidatoId },
-  select: { estado: true },
-});
-
-if (!candidatoActual) {
-  return res.status(404).json({
-    mensaje: "Candidato no encontrado.",
-  });
-}
-
-if (
-  candidatoActual.estado === "DESCARTADO" ||
-  candidatoActual.estado === "CONTRATADO"
-) {
-  return res.status(400).json({
-    mensaje: "No es posible registrar ni modificar ofertas de un candidato cuyo proceso ya finalizó.",
-  });
-}
-
-
 
     const contratosPermitidos = [
       "Término fijo",
@@ -1388,38 +1075,6 @@ export const contratarCandidato = async (req, res) => {
           { status: 409 }
         );
       }
-
-
-if (candidato.vacanteId != null) {
-  const vacante = await tx.vacante.findUnique({
-    where: { id: candidato.vacanteId },
-  });
-
-  if (!vacante || !vacante.activa) {
-    throw Object.assign(
-      new Error("La vacante ya no está disponible."),
-      { status: 409 }
-    );
-  }
-
-  const plazasCubiertas = await tx.candidato.count({
-    where: {
-      vacanteId: vacante.id,
-      estado: "CONTRATADO",
-      empleado: { isNot: null },
-    },
-  });
-
-  if (plazasCubiertas >= vacante.plazasTotales) {
-    throw Object.assign(
-      new Error(
-        "Todas las plazas de esta vacante ya están cubiertas."
-      ),
-      { status: 409 }
-    );
-  }
-}
-
 
       const puesto = await tx.puesto.findUnique({
         where: { id: puestoId },

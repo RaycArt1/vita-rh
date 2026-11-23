@@ -1,54 +1,106 @@
 import prisma from "../../config/prisma.js";
+
 import * as generadorService from "./generador.service.js";
+
+ 
 
 const TURNOS_VALIDOS = ["T12_20", "T12_22"];
 
+ 
+
 function obtenerFechaValida(valor, campo) {
+
   const fecha = new Date(valor);
 
+ 
+
   if (!valor || Number.isNaN(fecha.getTime())) {
+
     throw new Error(`${campo} no es una fecha válida.`);
+
   }
+
+ 
 
   return fecha;
+
 }
+
+ 
 
 export async function obtenerHorarios() {
+
   return prisma.horario.findMany({
+
     include: {
+
       empleado: true,
+
       area: true,
+
       creadoPor: true,
+
     },
+
     orderBy: {
+
       fechaInicio: "asc",
+
     },
+
   });
+
 }
 
+ 
+
 export async function crearHorario(data) {
+
   const fechaInicio = obtenerFechaValida(data.fechaInicio, "fechaInicio");
+
   const fechaFin = obtenerFechaValida(data.fechaFin, "fechaFin");
 
+ 
+
   if (fechaFin < fechaInicio) {
+
     throw new Error("La fecha de fin no puede ser anterior a la fecha de inicio.");
+
   }
+
+ 
 
   if (!TURNOS_VALIDOS.includes(data.turno)) {
+
     throw new Error("El turno debe ser T12_20 o T12_22.");
+
   }
+
+ 
 
   const empleadoId = Number(data.empleadoId);
+
   const areaId = Number(data.areaId);
+
   const creadoPorId = Number(data.creadoPorId);
 
+ 
+
   if (
+
     !Number.isInteger(empleadoId) ||
+
     !Number.isInteger(areaId) ||
+
     !Number.isInteger(creadoPorId)
+
   ) {
+
     throw new Error("empleadoId, areaId y creadoPorId son obligatorios y deben ser números enteros.");
+
   }
+
+ 
 
   return prisma.horario.upsert({
 
@@ -69,8 +121,11 @@ export async function crearHorario(data) {
     update: {
 
       turno: data.turno,
+
       areaId,
+
       creadoPorId,
+
     },
 
     create: {
@@ -106,10 +161,16 @@ export async function crearHorario(data) {
  
 
 export async function cambiarAsignacion(data) {
+
   const empleadoId = Number(data.empleadoId);
+
   const creadoPorId = Number(data.creadoPorId);
+
   const fechaTexto = String(data.fecha ?? "").slice(0, 10);
+
   const valor = data.valor;
+
+ 
 
   if (
 
@@ -694,57 +755,21 @@ export async function guardarPlanificacion(data) {
  
 
     return {
+
       mensaje: "La planificación se guardó correctamente.",
+
       mes,
+
       modo,
+
       horariosGuardados,
+
       descansosGuardados,
+
       totalGuardado: horariosGuardados + descansosGuardados,
+
     };
+
   });
-}
 
-
-export async function obtenerMisHorarios(empleadoId, inicio, fin) {
-  const fechaInicio = new Date(`${inicio}T00:00:00`);
-  const fechaFin = new Date(`${fin}T23:59:59.999`);
-
-  const inicioDescanso = new Date(`${inicio}T00:00:00.000Z`);
-  const finDescanso = new Date(`${fin}T23:59:59.999Z`);
-
-  const [horarios, descansos] = await Promise.all([
-    prisma.horario.findMany({
-      where: {
-        empleadoId,
-        fechaInicio: {
-          gte: fechaInicio,
-          lte: fechaFin,
-        },
-      },
-      include: {
-        area: true,
-      },
-      orderBy: {
-        fechaInicio: "asc",
-      },
-    }),
-
-    prisma.descanso.findMany({
-      where: {
-        empleadoId,
-        fecha: {
-          gte: inicioDescanso,
-          lte: finDescanso,
-        },
-      },
-      orderBy: {
-        fecha: "asc",
-      },
-    }),
-  ]);
-
-  return {
-    horarios,
-    descansos,
-  };
 }

@@ -10,6 +10,5 @@ router.post("/", verificarToken, horarioController.crearHorario);
 router.put("/asignacion", verificarToken, horarioController.cambiarAsignacion);
 router.post("/generar",verificarToken,horarioController.generarVistaPrevia);
 router.post("/guardar",verificarToken,horarioController.guardarPlanificacion);
-router.get("/mis-horarios", verificarToken, horarioController.obtenerMisHorarios);
 
 export default router;

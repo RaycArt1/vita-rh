@@ -1,10 +1,15 @@
 import { Router } from "express";
-import { listarRoles, crearRol } from "./roles.controller.js";
-import { verificarToken } from "../auth/auth.middleware.js";
-
+import {
+  listarRoles,
+  crearRol,
+  obtenerPermisosRol,
+  guardarPermisosRol
+} from "./roles.controller.js";
 const router = Router();
-
-router.get("/", verificarToken, listarRoles);
-router.post("/", verificarToken, crearRol);
+router.get("/", listarRoles);
+router.post("/", crearRol);
+// 👇 AGREGA ESTAS DOS LÍNEAS SI FALTABAN EN TU ROUTER
+router.get("/:id/permisos", obtenerPermisosRol);
+router.put("/:id/permisos", guardarPermisosRol);
 
 export default router;

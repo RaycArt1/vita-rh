@@ -4,10 +4,12 @@ frontend/node_modules/
 backend/node_modules/
 backend/backend/
 
+
 # Variables de entorno y secretos
 .env
 .env.*
 !.env.example
+
 
 # Bases de datos locales y copias de seguridad
 backend/prisma/*.db
@@ -15,9 +17,11 @@ backend/prisma/*.db-journal
 *.sqlite
 *.sqlite3
 
+
 # Archivos de compilaci�n
 frontend/dist/
 backend/generated/prisma/
+
 
 # Archivos temporales
 *.log

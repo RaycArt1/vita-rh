@@ -11,32 +11,13 @@ export const crearCandidato = async (datos) => {
 
   formulario.append("nombre", datos.nombre);
   formulario.append("apellido", datos.apellido);
-
-formulario.append("identidad", datos.identidad || "");
-
   formulario.append("telefono", datos.telefono || "");
-
-formulario.append("direccion", datos.direccion || "");
-formulario.append("referencias", datos.referencias || "");
-
   formulario.append("email", datos.email || "");
   formulario.append("puestoAplicado", datos.puestoAplicado);
-
-if (datos.vacanteId) {
-  formulario.append("vacanteId", datos.vacanteId);
-}
-
 
   if (datos.cv) {
     formulario.append("cv", datos.cv);
   }
-
-
-  if (datos.foto) {
-   formulario.append("foto", datos.foto);
-  }
-
-
 
   const respuesta = await api.post("/reclutamiento", formulario);
 
@@ -186,43 +167,10 @@ export const contratarCandidato = async (candidatoId, datos) => {
 };
 
 
-export const obtenerVacantes = async () => {
-  const { data } = await api.get("/reclutamiento/vacantes");
-  return data;
-};
-
-export const crearVacante = async (datos) => {
-  const { data } = await api.post("/reclutamiento/vacantes", datos);
-  return data;
-};
-
-export const obtenerAreas = async () => {
-  const { data } = await api.get("/empleados/catalogos/areas");
-  return data;
-};
 
 
 
-export const obtenerCV = async (candidatoId) => {
-  const { data } = await api.get(
-    `/reclutamiento/${candidatoId}/cv`,
-    { responseType: "blob" }
-  );
 
-  return data;
-};
-
-
-export const obtenerFoto = async (candidatoId) => {
-  const { data } = await api.get(
-    `/reclutamiento/${candidatoId}/foto`,
-    {
-      responseType: "blob",
-    }
-  );
-
-  return data;
-};
 
 
 
