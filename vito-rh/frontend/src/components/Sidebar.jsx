@@ -12,6 +12,7 @@ import {
   FaUserTie,
   FaMoneyBillWave,
   FaWrench,
+  FaUser,
 } from "react-icons/fa";
 
 // Lista completa conectada con los identificadores (IDs) de módulos
@@ -27,6 +28,35 @@ const menuItems = [
   { nombre: "Historial", ruta: "/bitacora", rutaChef: "/chef/bitacora", icono: <FaHistory />, detalle: "Registro de actividad", permiso: "bitacora" },
   { nombre: "Mantenimiento", ruta: "/mantenimiento", rutaChef: "/chef/mantenimiento", icono: <FaWrench />, detalle: "Gestión y soporte", permiso: "mantenimiento" },
 ];
+
+const menuEmpleado = [
+  { nombre: "Mi resumen", ruta: "/resumen", icono: <FaHome />, detalle: "Mi información personal" },
+  { nombre: "Mis horarios", ruta: "/mis-horarios", icono: <FaCalendarAlt />, detalle: "Turnos asignados" },
+  { nombre: "Mis solicitudes", ruta: "/mis-solicitudes", icono: <FaUmbrellaBeach />, detalle: "Vacaciones y permisos" },
+  { nombre: "Mis llamados", ruta: "/mis-llamados", icono: <FaFileAlt />, detalle: "Llamados de atención" },
+  { nombre: "Mi perfil", ruta: "/mi-perfil", icono: <FaUser />, detalle: "Datos personales" },
+];
+
+function obtenerUsuarioActual() {
+  try {
+    const rawSession = sessionStorage.getItem("gestRH_usuario");
+    if (rawSession) {
+      const parsedSession = JSON.parse(rawSession);
+      if (parsedSession && Object.keys(parsedSession).length > 0) {
+        return parsedSession;
+      }
+    }
+  } catch (e) {
+    console.error("Error parseando gestRH_usuario en Sidebar:", e);
+  }
+
+  try {
+    return JSON.parse(localStorage.getItem("usuario") || "{}");
+  } catch (e) {
+    console.error("Error parseando usuario en Sidebar:", e);
+    return {};
+  }
+}
 
 function normalizarPermiso(clave) {
   const limpio = (clave || "").toLowerCase().trim();
@@ -54,13 +84,9 @@ function obtenerPermisosChefActivos() {
   }
 
   // Respaldo: permisos almacenados en el objeto usuario
-  try {
-    const usuarioLogueado = JSON.parse(localStorage.getItem("usuario") || "{}");
-    if (Array.isArray(usuarioLogueado.permisos)) {
-      return usuarioLogueado.permisos.map(normalizarPermiso);
-    }
-  } catch (e) {
-    console.error("Error parseando usuario en Sidebar:", e);
+  const usuarioLogueado = obtenerUsuarioActual();
+  if (Array.isArray(usuarioLogueado.permisos)) {
+    return usuarioLogueado.permisos.map(normalizarPermiso);
   }
 
   return [];
@@ -68,21 +94,26 @@ function obtenerPermisosChefActivos() {
 
 export default function Sidebar() {
   const location = useLocation();
-  const esChef = location.pathname.startsWith("/chef");
+  const [usuarioActual, setUsuarioActual] = useState(() => obtenerUsuarioActual());
   const [permisosChef, setPermisosChef] = useState(() => obtenerPermisosChefActivos());
 
+  const rolNormalizado = (usuarioActual?.rol || "").toUpperCase().trim();
+  const esEmpleado = rolNormalizado === "EMPLEADO";
+  const esChef = !esEmpleado && location.pathname.startsWith("/chef");
+
   useEffect(() => {
-    const actualizarPermisos = () => {
+    const actualizarEstado = () => {
+      setUsuarioActual(obtenerUsuarioActual());
       setPermisosChef(obtenerPermisosChefActivos());
     };
 
-    actualizarPermisos();
-    window.addEventListener("storage", actualizarPermisos);
-    window.addEventListener("permisosActualizados", actualizarPermisos);
+    actualizarEstado();
+    window.addEventListener("storage", actualizarEstado);
+    window.addEventListener("permisosActualizados", actualizarEstado);
 
     return () => {
-      window.removeEventListener("storage", actualizarPermisos);
-      window.removeEventListener("permisosActualizados", actualizarPermisos);
+      window.removeEventListener("storage", actualizarEstado);
+      window.removeEventListener("permisosActualizados", actualizarEstado);
     };
   }, [location.pathname]);
 
@@ -95,13 +126,36 @@ export default function Sidebar() {
     return permisosChef.includes(claveItem);
   });
 
+  const tituloPanel = esEmpleado
+    ? "PANEL EMPLEADO"
+    : esChef
+    ? "PANEL DEL CHEF"
+    : "PANEL ADMINISTRADOR";
+
+  const itemsParaRenderizar = esEmpleado
+    ? menuEmpleado.map((item) => ({
+        ...item,
+        destino: item.ruta,
+      }))
+    : menuFiltrado.map((item) => ({
+        ...item,
+        destino: esChef ? item.rutaChef : item.ruta,
+      }));
+
   return (
     <aside className="app-sidebar">
       <div className="sidebar-brand">
         <img
           src="/vita.jpeg"
           alt="Logo Vito Pizzería"
-          style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }}
+          style={{
+            width: 40,
+            height: 40,
+            objectFit: "contain",
+            borderRadius: 8,
+            backgroundColor: "#ffffff",
+            padding: 3,
+          }}
         />
         <div className="sidebar-brand-text">
           <strong>GestRH</strong>
@@ -110,28 +164,25 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-section-label">
-        {esChef ? "PANEL DEL CHEF" : "PANEL ADMINISTRADOR"}
+        {tituloPanel}
       </div>
 
       <nav className="sidebar-menu">
-        {menuFiltrado.map((item) => {
-          const destino = esChef ? item.rutaChef : item.ruta;
-          return (
-            <NavLink
-              key={destino}
-              to={destino}
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "active" : ""}`
-              }
-            >
-              <span className="sidebar-link-icon">{item.icono}</span>
-              <span className="sidebar-link-copy">
-                <strong>{item.nombre}</strong>
-                {item.detalle && <small>{item.detalle}</small>}
-              </span>
-            </NavLink>
-          );
-        })}
+        {itemsParaRenderizar.map((item) => (
+          <NavLink
+            key={item.destino}
+            to={item.destino}
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? "active" : ""}`
+            }
+          >
+            <span className="sidebar-link-icon">{item.icono}</span>
+            <span className="sidebar-link-copy">
+              <strong>{item.nombre}</strong>
+              {item.detalle && <small>{item.detalle}</small>}
+            </span>
+          </NavLink>
+        ))}
       </nav>
     </aside>
   );

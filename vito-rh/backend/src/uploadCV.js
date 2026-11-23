@@ -1,10 +1,13 @@
 
+import fs from "fs";
 import multer from "multer";
 import path from "path";
 
 const almacenamiento = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/cvs");
+    const rutaDestino = path.join(process.cwd(), "uploads", "cvs");
+    fs.mkdirSync(rutaDestino, { recursive: true });
+    cb(null, rutaDestino);
   },
   filename: (req, file, cb) => {
     const nombre = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
