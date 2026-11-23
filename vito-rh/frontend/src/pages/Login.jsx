@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import api from "../services/api";
@@ -53,7 +52,7 @@ export default function Login() {
       // Guardamos también en localStorage el formato que leen otros módulos (ej. Sidebar)
       localStorage.setItem("usuario", JSON.stringify(resultado.usuario));
 
-      const rol = String(resultado.usuario.rol || "").toUpperCase();
+      const rol = String(resultado.usuario.rol || "").toUpperCase().trim();
       const username = resultado.usuario.username;
 
       // Validación robusta para reconocer al chef y roles específicos

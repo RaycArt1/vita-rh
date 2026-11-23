@@ -70,7 +70,19 @@ export default function ChefDashboard() {
     <div className="chef-layout">
       <aside className="chef-sidebar">
         <div className="chef-brand">
-          <div className="chef-logo">V</div>
+          <img
+            src="/vita.jpeg"
+            alt="Logo Vito Pizzería"
+            className="chef-logo"
+            style={{
+              width: 40,
+              height: 40,
+              objectFit: "contain",
+              borderRadius: 8,
+              backgroundColor: "#ffffff",
+              padding: 3,
+            }}
+          />
           <div>
             <strong>GestRH</strong>
             <span>Vito Pizzería</span>

@@ -23,6 +23,7 @@ import Bitacora from "../pages/Bitacora";
 import Planillas from "../pages/Planillas";
 
 import MiResumen from "../pages/empleado/MiResumen";
+import MisHorarios from "../pages/empleado/MisHorarios";
 import MisSolicitudes from "../pages/empleado/MisSolicitudes";
 import MisLlamados from "../pages/empleado/MisLlamados";
 import MiPerfil from "../pages/empleado/MiPerfil";
@@ -113,6 +114,7 @@ export default function AppRouter() {
 
       {/* Rutas del Panel de Empleado */}
       <Route path="/resumen" element={<MiResumen />} />
+      <Route path="/mis-horarios" element={<MisHorarios />} />
       <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
       <Route path="/mis-llamados" element={<MisLlamados />} />
       <Route path="/mi-perfil" element={<MiPerfil />} />
