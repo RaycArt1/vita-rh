@@ -65,3 +65,19 @@ export async function firmarLlamado(llamadoId, empleadoId) {
     data: { firmadoEmpleado: true, fechaFirma: new Date() },
   });
 }
+
+import bcrypt from "bcrypt";
+
+export async function cambiarPasswordPropia(usuarioId, actual, nueva) {
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+  if (!usuario) return { error: "NO_ENCONTRADO" };
+
+  const coincide = await bcrypt.compare(actual, usuario.password);
+  if (!coincide) return { error: "ACTUAL_INCORRECTA" };
+
+  await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { password: await bcrypt.hash(nueva, 10) },
+  });
+  return { ok: true };
+}

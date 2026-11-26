@@ -78,3 +78,20 @@ export async function firmarLlamadoEmpleado(req, res) {
     res.status(500).json({ mensaje: "Error interno del servidor" });
   }
 }
+
+export async function cambiarPassword(req, res) {
+  try {
+    const { actual, nueva } = req.body;
+    if (!actual || !nueva) {
+      return res.status(400).json({ mensaje: "Debes indicar la contraseña actual y la nueva." });
+    }
+    const r = await resumenService.cambiarPasswordPropia(req.usuario.id, String(actual), String(nueva));
+    if (r.error === "ACTUAL_INCORRECTA") {
+      return res.status(400).json({ mensaje: "La contraseña actual no es correcta." });
+    }
+    res.json({ mensaje: "Contraseña actualizada." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: "Error interno del servidor." });
+  }
+}
