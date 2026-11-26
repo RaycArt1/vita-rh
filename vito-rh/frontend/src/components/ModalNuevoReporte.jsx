@@ -91,12 +91,12 @@ export default function ModalNuevoReporte({ onClose, onSuccess }) {
 
               <div className="row mb-3">
                 <div className="col">
-                  <label className="form-label small fw-bold">SUPERVISOR</label>
+                  <label className="form-label small fw-bold">QUIEN REPORTA</label>
                   <input
                     type="text"
                     className="form-control"
                     name="supervisor"
-                    placeholder="Nombre del supervisor"
+                    placeholder="Nombre de quien reporta"
                     value={formData.supervisor}
                     onChange={handleChange}
                     required
