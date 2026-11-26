@@ -4,7 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 
 const ROLES_FIJOS = [
   { value: "ADMINISTRADOR", label: "Administrador" },
-  { value: "CHEF", label: "Chef de cocina" },
+  { value: "CHEF DE COCINA", label: "Chef de cocina" },
   { value: "EMPLEADO", label: "Empleado" },
   { value: "CLIENTE", label: "Cliente" },
 ];
@@ -28,7 +28,7 @@ const formularioInicial = {
   empleadoId: "",
 };
 
-function crearFormularioRolVacio(nombre = "Chef Ejecutivo") {
+function crearFormularioRolVacio(nombre = "Chef de cocina") {
   const base = { nombre };
   CLAVES_MODULOS.forEach((clave) => {
     base[clave] = false;
@@ -38,83 +38,112 @@ function crearFormularioRolVacio(nombre = "Chef Ejecutivo") {
 
 function normalizarModulo(nombre) {
   const mod = (nombre || "").toLowerCase().trim();
-  if (mod === "horarios" || mod === "calendario" || mod === "calendarios") {
+
+  if (
+    mod === "horarios" ||
+    mod === "calendario" ||
+    mod === "calendarios"
+  ) {
     return "calendarios";
   }
+
   if (mod === "historial" || mod === "bitacora") {
     return "bitacora";
   }
+
   return mod;
 }
 
 function nombreCompleto(usuario) {
   const empleado = usuario.empleado;
+
   return empleado
     ? `${empleado.nombres} ${empleado.apellidos}`
     : "Sin empleado asociado";
+}
+
+function normalizarRol(nombre) {
+  return (nombre || "")
+    .toUpperCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [empleados, setEmpleados] = useState([]);
   const [rolesDinamicos, setRolesDinamicos] = useState(ROLES_FIJOS);
+
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [guardandoRol, setGuardandoRol] = useState(false);
+
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalRolAbierto, setModalRolAbierto] = useState(false);
+  const [esNuevoRol, setEsNuevoRol] = useState(false);
 
   const [editando, setEditando] = useState(null);
   const [formulario, setFormulario] = useState(formularioInicial);
+
   const [formularioRol, setFormularioRol] = useState(
-    crearFormularioRolVacio("Chef Ejecutivo")
+    crearFormularioRolVacio()
   );
 
   const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
+  const [mostrarConfirmPassword, setMostrarConfirmPassword] =
+    useState(false);
 
+  // Buscar el rol real de Chef en la base de datos.
   function obtenerRolChefEjecutivo() {
     return (
       rolesDinamicos.find((r) => {
-        const nombreLimpio = (r.label || r.value || "").toLowerCase().trim();
-        return nombreLimpio === "chef ejecutivo";
-      }) || { id: 4, label: "Chef Ejecutivo", value: "CHEF EJECUTIVO" }
+        const nombre = normalizarRol(r.label || r.value);
+
+        return (
+          nombre === "CHEF DE COCINA" ||
+          nombre === "CHEF EJECUTIVO" ||
+          nombre === "CHEF"
+        );
+      }) || null
     );
   }
 
+  // Cargar usuarios, empleados y roles.
   async function cargarDatos() {
     setCargando(true);
     setError("");
 
     try {
-      const [respuestaUsuarios, respuestaEmpleados] = await Promise.all([
-        api.get("/usuarios"),
-        api.get("/usuarios/empleados-disponibles"),
-      ]);
+      const [respuestaUsuarios, respuestaEmpleados, respuestaRoles] =
+        await Promise.all([
+          api.get("/usuarios"),
+          api.get("/usuarios/empleados-disponibles"),
+          api.get("/roles"),
+        ]);
 
-      setUsuarios(respuestaUsuarios.data);
-      setEmpleados(respuestaEmpleados.data);
+      setUsuarios(respuestaUsuarios.data || []);
+      setEmpleados(respuestaEmpleados.data || []);
 
-      try {
-        const respuestaRoles = await api.get("/roles");
-        if (respuestaRoles.data && respuestaRoles.data.length > 0) {
-          const rolesMapeados = respuestaRoles.data.map((r) => ({
-            value: r.nombre.toUpperCase(),
-            label: r.nombre,
-            id: r.id,
-          }));
-          setRolesDinamicos(rolesMapeados);
-        }
-      } catch (errRol) {
-        console.error("No se pudieron cargar los roles dinámicos", errRol);
+      if (respuestaRoles.data && respuestaRoles.data.length > 0) {
+        const rolesMapeados = respuestaRoles.data.map((r) => ({
+          value: r.nombre.toUpperCase(),
+          label: r.nombre,
+          id: r.id,
+        }));
+
+        setRolesDinamicos(rolesMapeados);
       }
     } catch (err) {
+      console.error("Error al cargar datos:", err);
+
       setError(
         err.response?.data?.mensaje ||
+          err.response?.data?.error ||
           "No se pudieron cargar los usuarios. Verifica que el backend esté funcionando."
       );
     } finally {
@@ -135,7 +164,7 @@ export default function Usuarios() {
       return (
         usuario.username.toLowerCase().includes(texto) ||
         empleado.includes(texto) ||
-        usuario.rol.toLowerCase().includes(texto)
+        (usuario.rol || "").toLowerCase().includes(texto)
       );
     });
   }, [usuarios, busqueda]);
@@ -145,9 +174,17 @@ export default function Usuarios() {
 
   function abrirCrear() {
     setEditando(null);
+
     const rolPorDefecto =
-      rolesDinamicos.length > 0 ? rolesDinamicos[0].value : "ADMINISTRADOR";
-    setFormulario({ ...formularioInicial, rol: rolPorDefecto });
+      rolesDinamicos.length > 0
+        ? rolesDinamicos[0].value
+        : "ADMINISTRADOR";
+
+    setFormulario({
+      ...formularioInicial,
+      rol: rolPorDefecto,
+    });
+
     setMostrarPassword(false);
     setMostrarConfirmPassword(false);
     setError("");
@@ -156,81 +193,75 @@ export default function Usuarios() {
   }
 
   function abrirCrearRol() {
-    setFormularioRol(crearFormularioRolVacio("Chef Ejecutivo"));
+    setEsNuevoRol(true);
+    setFormularioRol(crearFormularioRolVacio(""));
     setError("");
     setExito("");
     setModalRolAbierto(true);
   }
 
+  // Abrir el administrador de permisos del Chef.
   async function abrirEditarPermisosChef() {
+    setEsNuevoRol(false);
     setError("");
     setExito("");
 
     const rolChef = obtenerRolChefEjecutivo();
-    const roleIdChef = rolChef.id ?? 4;
-    const nombreRolChef = rolChef.label || "Chef Ejecutivo";
-    const claveStorage = `permisos_rol_${roleIdChef}`;
 
-    const permisosLocalesRaw = localStorage.getItem(claveStorage);
-    const tieneGuardadoLocal = permisosLocalesRaw !== null;
-
-    let listaLocal = [];
-    if (tieneGuardadoLocal) {
-      try {
-        const parsed = JSON.parse(permisosLocalesRaw);
-        if (Array.isArray(parsed)) {
-          listaLocal = parsed
-            .map(normalizarModulo)
-            .filter((mod) => CLAVES_MODULOS.includes(mod));
-        }
-      } catch (e) {
-        console.error("Error leyendo permisos locales:", e);
-      }
-    }
-
-    // Respetar estrictamente los cambios guardados por el usuario
-    if (tieneGuardadoLocal) {
-      const estadoGuardado = crearFormularioRolVacio(nombreRolChef);
-      listaLocal.forEach((mod) => {
-        estadoGuardado[mod] = true;
-      });
-      setFormularioRol(estadoGuardado);
-      setModalRolAbierto(true);
+    if (!rolChef?.id) {
+      setError(
+        "No se encontró el rol de Chef en la base de datos. Verifica los roles registrados."
+      );
       return;
     }
 
+    const roleIdChef = Number(rolChef.id);
+    const nombreRolChef = rolChef.label;
+    const claveStorage = `permisos_rol_${roleIdChef}`;
+
     try {
       const data = await fetchPermisosRol(roleIdChef);
-      const rawPermisos = data?.permisos || (Array.isArray(data) ? data : []);
-      const permisosBackend = rawPermisos
-        .map((p) =>
-          normalizarModulo(typeof p === "string" ? p : p?.modulo || p?.nombre || "")
-        )
-        .filter((mod) => CLAVES_MODULOS.includes(mod));
+
+      const rawPermisos =
+        data?.permisos || (Array.isArray(data) ? data : []);
 
       const nuevosPermisos = crearFormularioRolVacio(nombreRolChef);
-      permisosBackend.forEach((mod) => {
-        nuevosPermisos[mod] = true;
+
+      rawPermisos.forEach((permiso) => {
+        const modulo = normalizarModulo(
+          typeof permiso === "string"
+            ? permiso
+            : permiso?.modulo || permiso?.nombre || ""
+        );
+        if (CLAVES_MODULOS.includes(modulo)) {
+          nuevosPermisos[modulo] =
+            typeof permiso === "string" ? true : permiso?.visible === true;
+        }
       });
 
       setFormularioRol(nuevosPermisos);
       setModalRolAbierto(true);
     } catch (err) {
       console.error("Error al cargar permisos del chef:", err);
-      setFormularioRol(crearFormularioRolVacio(nombreRolChef));
-      setModalRolAbierto(true);
+
+      setError(
+        err.response?.data?.error ||
+          "No se pudieron cargar los permisos del Chef."
+      );
     }
   }
 
   function abrirEditar(usuario) {
     setEditando(usuario);
+
     setFormulario({
       username: usuario.username,
       password: "",
       confirmPassword: "",
       rol: usuario.rol,
-      empleadoId: String(usuario.empleadoId),
+      empleadoId: String(usuario.empleadoId || ""),
     });
+
     setMostrarPassword(false);
     setMostrarConfirmPassword(false);
     setError("");
@@ -243,10 +274,21 @@ export default function Usuarios() {
 
     if (name === "empleadoId") {
       if (value) {
-        const empSel = empleados.find((e) => e.id === Number(value));
+        const empSel = empleados.find(
+          (e) => e.id === Number(value)
+        );
+
         if (empSel) {
-          const primerNombre = empSel.nombres.trim().charAt(0).toLowerCase();
-          const primerApellido = empSel.apellidos.trim().split(" ")[0].toLowerCase();
+          const primerNombre = empSel.nombres
+            .trim()
+            .charAt(0)
+            .toLowerCase();
+
+          const primerApellido = empSel.apellidos
+            .trim()
+            .split(" ")[0]
+            .toLowerCase();
+
           const usernameGenerado = `${primerNombre}${primerApellido}`;
 
           setFormulario((anterior) => ({
@@ -254,30 +296,39 @@ export default function Usuarios() {
             empleadoId: value,
             username: usernameGenerado,
           }));
+
           return;
         }
       }
+
       setFormulario((anterior) => ({
         ...anterior,
         empleadoId: "",
         username: "",
       }));
+
       return;
     }
 
-    setFormulario((anterior) => ({ ...anterior, [name]: value }));
+    setFormulario((anterior) => ({
+      ...anterior,
+      [name]: value,
+    }));
   }
 
   function cambiarCampoRol(evento) {
     const { name, value, type, checked } = evento.target;
+
     setFormularioRol((anterior) => ({
       ...anterior,
       [name]: type === "checkbox" ? Boolean(checked) : value,
     }));
   }
 
+  // Crear o actualizar usuarios.
   async function guardar(evento) {
     evento.preventDefault();
+
     setGuardando(true);
     setError("");
     setExito("");
@@ -292,7 +343,9 @@ export default function Usuarios() {
         password: formulario.password,
         confirmPassword: formulario.confirmPassword,
         rol: formulario.rol,
-        roleId: rolSeleccionadoObj?.id ? Number(rolSeleccionadoObj.id) : undefined,
+        roleId: rolSeleccionadoObj?.id
+          ? Number(rolSeleccionadoObj.id)
+          : undefined,
         empleadoId: Number(formulario.empleadoId),
       };
 
@@ -300,7 +353,9 @@ export default function Usuarios() {
         const cambios = {
           username: formulario.username.trim(),
           rol: formulario.rol,
-          roleId: rolSeleccionadoObj?.id ? Number(rolSeleccionadoObj.id) : undefined,
+          roleId: rolSeleccionadoObj?.id
+            ? Number(rolSeleccionadoObj.id)
+            : undefined,
         };
 
         if (formulario.password) {
@@ -309,15 +364,19 @@ export default function Usuarios() {
         }
 
         await api.put(`/usuarios/${editando.id}`, cambios);
+
         setExito("Usuario actualizado correctamente.");
       } else {
         await api.post("/usuarios", payload);
+
         setExito("Usuario creado correctamente.");
       }
 
       setModalAbierto(false);
       await cargarDatos();
     } catch (err) {
+      console.error("Error al guardar usuario:", err);
+
       setError(
         err.response?.data?.mensaje ||
           err.response?.data?.error ||
@@ -328,45 +387,126 @@ export default function Usuarios() {
     }
   }
 
+  // Guardar permisos del rol Chef o crear nuevo rol.
   async function guardarRol(evento) {
     evento.preventDefault();
+
     setGuardandoRol(true);
     setError("");
     setExito("");
 
     try {
-      const rolChef = obtenerRolChefEjecutivo();
-      const roleIdChef = rolChef.id ?? 4;
-      const claveStorage = `permisos_rol_${roleIdChef}`;
+      const permisosCompletos = CLAVES_MODULOS.map((modulo) => ({
+        modulo,
+        visible: Boolean(formularioRol[modulo]),
+      }));
 
-      const modulosActivos = CLAVES_MODULOS.filter(
-        (clave) => Boolean(formularioRol[clave]) === true
-      );
+      if (esNuevoRol) {
+        const nombreLimpio = (formularioRol.nombre || "").trim();
 
-      await guardarPermisosRol(roleIdChef, { permisos: modulosActivos });
+        if (!nombreLimpio) {
+          throw new Error("Debes ingresar el nombre del nuevo rol.");
+        }
 
-      localStorage.setItem(claveStorage, JSON.stringify(modulosActivos));
+        const respuestaCreacion = await api.post("/roles", {
+          nombre: nombreLimpio,
+          permisos: permisosCompletos,
+        });
 
-      const usuarioActual = JSON.parse(localStorage.getItem("usuario") || "{}");
-      const rolUsuarioActual = (usuarioActual.rol || "").toUpperCase().trim();
-      if (
-        rolUsuarioActual === "CHEF EJECUTIVO" ||
-        rolUsuarioActual === (rolChef.value || "").toUpperCase().trim()
-      ) {
-        usuarioActual.permisos = modulosActivos;
-        localStorage.setItem("usuario", JSON.stringify(usuarioActual));
+        const dataCreada = respuestaCreacion?.data || {};
+        const nuevoRolId =
+          dataCreada?.id ||
+          dataCreada?.rol?.id ||
+          dataCreada?.role?.id ||
+          dataCreada?.data?.id ||
+          null;
+
+        if (nuevoRolId) {
+          try {
+            await guardarPermisosRol(Number(nuevoRolId), {
+              permisos: permisosCompletos,
+            });
+          } catch (permErr) {
+            console.warn(
+              "Rol creado; guardado secundario de permisos omitido/no necesario:",
+              permErr
+            );
+          }
+
+          const modulosActivos = permisosCompletos
+            .filter((permiso) => permiso.visible)
+            .map((permiso) => permiso.modulo);
+
+          localStorage.setItem(
+            `permisos_rol_${Number(nuevoRolId)}`,
+            JSON.stringify(modulosActivos)
+          );
+        }
+
+        window.dispatchEvent(new Event("permisosActualizados"));
+
+        setExito(`¡Rol "${nombreLimpio}" creado correctamente!`);
+        setModalRolAbierto(false);
+        setEsNuevoRol(false);
+
+        await cargarDatos();
+        return;
       }
 
-      // Notifica a Sidebar y a otras vistas que los permisos cambiaron
+      const rolChef = obtenerRolChefEjecutivo();
+
+      if (!rolChef?.id) {
+        throw new Error(
+          "No se encontró el rol de Chef en la base de datos."
+        );
+      }
+
+      const roleIdChef = Number(rolChef.id);
+      const claveStorage = `permisos_rol_${roleIdChef}`;
+
+      // Enviamos todos los módulos, incluso los desactivados, para que
+      // el backend actualice también los permisos que pasan a false.
+      await guardarPermisosRol(roleIdChef, {
+        permisos: permisosCompletos,
+      });
+
+      const modulosActivos = permisosCompletos
+        .filter((permiso) => permiso.visible)
+        .map((permiso) => permiso.modulo);
+
+      // Cache únicamente informativa/compatibilidad; el Sidebar consulta la API.
+      localStorage.setItem(claveStorage, JSON.stringify(modulosActivos));
+
+      const usuarioActual = JSON.parse(
+        localStorage.getItem("usuario") || "{}"
+      );
+
+      const rolUsuarioActual = normalizarRol(usuarioActual.rol);
+
+      if (
+        rolUsuarioActual === "CHEF EJECUTIVO" ||
+        rolUsuarioActual === "CHEF DE COCINA" ||
+        rolUsuarioActual === "CHEF"
+      ) {
+        usuarioActual.permisos = modulosActivos;
+
+        localStorage.setItem("usuario", JSON.stringify(usuarioActual));
+        sessionStorage.setItem("gestRH_usuario", JSON.stringify(usuarioActual));
+      }
+
       window.dispatchEvent(new Event("permisosActualizados"));
 
       setExito("¡Permisos del Chef actualizados correctamente!");
       setModalRolAbierto(false);
+
       await cargarDatos();
     } catch (err) {
+      console.error("Error al guardar permisos:", err);
+
       setError(
         err.response?.data?.mensaje ||
           err.response?.data?.error ||
+          err.message ||
           "No se pudo procesar la solicitud."
       );
     } finally {
@@ -374,10 +514,15 @@ export default function Usuarios() {
     }
   }
 
+  // Activar o desactivar cuentas.
   async function cambiarEstado(usuario) {
     const accion = usuario.activo ? "desactivar" : "activar";
 
-    if (!window.confirm(`¿Deseas ${accion} la cuenta ${usuario.username}?`)) {
+    if (
+      !window.confirm(
+        `¿Deseas ${accion} la cuenta ${usuario.username}?`
+      )
+    ) {
       return;
     }
 
@@ -390,19 +535,28 @@ export default function Usuarios() {
       });
 
       setExito(
-        `Cuenta ${usuario.activo ? "desactivada" : "activada"} correctamente.`
+        `Cuenta ${
+          usuario.activo ? "desactivada" : "activada"
+        } correctamente.`
       );
 
       await cargarDatos();
     } catch (err) {
+      console.error("Error al cambiar estado:", err);
+
       setError(
-        err.response?.data?.mensaje || "No se pudo cambiar el estado."
+        err.response?.data?.mensaje ||
+          "No se pudo cambiar el estado."
       );
     }
   }
 
   function etiquetaRol(rol) {
-    return rolesDinamicos.find((item) => item.value === rol)?.label || rol;
+    return (
+      rolesDinamicos.find(
+        (item) => item.value === rol
+      )?.label || rol
+    );
   }
 
   return (
@@ -417,18 +571,30 @@ export default function Usuarios() {
           </div>
 
           <div className="d-flex gap-2">
-            <button className="btn btn-outline-primary" onClick={abrirCrearRol}>
+            <button
+              className="btn btn-outline-primary"
+              onClick={abrirCrearRol}
+            >
               <i className="bi bi-shield-plus me-2" />
               Nuevo rol
             </button>
+
             <button
               className="btn btn-outline-warning"
               onClick={abrirEditarPermisosChef}
+              disabled={!rolChefActual?.id}
             >
               <i className="bi bi-gear me-2" />
-              Editar Permisos Chef (ID: {rolChefActual.id ?? 4})
+              Editar Permisos Chef
+              {rolChefActual?.id
+                ? ` (ID: ${rolChefActual.id})`
+                : " (No disponible)"}
             </button>
-            <button className="btn btn-primary" onClick={abrirCrear}>
+
+            <button
+              className="btn btn-primary"
+              onClick={abrirCrear}
+            >
               <i className="bi bi-person-plus me-2" />
               Nuevo usuario
             </button>
@@ -454,9 +620,14 @@ export default function Usuarios() {
                 <div className="rounded-circle bg-primary-subtle text-primary p-3">
                   <i className="bi bi-people fs-4" />
                 </div>
+
                 <div>
-                  <div className="text-secondary small">Total de cuentas</div>
-                  <div className="fs-3 fw-bold">{usuarios.length}</div>
+                  <div className="text-secondary small">
+                    Total de cuentas
+                  </div>
+                  <div className="fs-3 fw-bold">
+                    {usuarios.length}
+                  </div>
                 </div>
               </div>
             </div>
@@ -468,9 +639,14 @@ export default function Usuarios() {
                 <div className="rounded-circle bg-success-subtle text-success p-3">
                   <i className="bi bi-person-check fs-4" />
                 </div>
+
                 <div>
-                  <div className="text-secondary small">Cuentas activas</div>
-                  <div className="fs-3 fw-bold">{activos}</div>
+                  <div className="text-secondary small">
+                    Cuentas activas
+                  </div>
+                  <div className="fs-3 fw-bold">
+                    {activos}
+                  </div>
                 </div>
               </div>
             </div>
@@ -482,9 +658,14 @@ export default function Usuarios() {
                 <div className="rounded-circle bg-warning-subtle text-warning p-3">
                   <i className="bi bi-shield-lock fs-4" />
                 </div>
+
                 <div>
-                  <div className="text-secondary small">Roles disponibles</div>
-                  <div className="fs-3 fw-bold">{rolesDinamicos.length}</div>
+                  <div className="text-secondary small">
+                    Roles disponibles
+                  </div>
+                  <div className="fs-3 fw-bold">
+                    {rolesDinamicos.length}
+                  </div>
                 </div>
               </div>
             </div>
@@ -499,11 +680,14 @@ export default function Usuarios() {
                   <span className="input-group-text bg-white">
                     <i className="bi bi-search" />
                   </span>
+
                   <input
                     className="form-control"
                     placeholder="Buscar usuario, empleado o rol..."
                     value={busqueda}
-                    onChange={(evento) => setBusqueda(evento.target.value)}
+                    onChange={(evento) =>
+                      setBusqueda(evento.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -515,7 +699,10 @@ export default function Usuarios() {
 
             {cargando ? (
               <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status" />
+                <div
+                  className="spinner-border text-primary"
+                  role="status"
+                />
                 <p className="text-secondary mt-2 mb-0">
                   Cargando usuarios...
                 </p>
@@ -538,7 +725,9 @@ export default function Usuarios() {
                     {usuariosFiltrados.map((usuario) => (
                       <tr key={usuario.id}>
                         <td>
-                          <div className="fw-semibold">{usuario.username}</div>
+                          <div className="fw-semibold">
+                            {usuario.username}
+                          </div>
                           <small className="text-secondary">
                             ID: {usuario.id}
                           </small>
@@ -552,7 +741,9 @@ export default function Usuarios() {
                         </td>
 
                         <td>
-                          <div>{usuario.empleado?.puesto?.nombre || "—"}</div>
+                          <div>
+                            {usuario.empleado?.puesto?.nombre || "—"}
+                          </div>
                           <small className="text-secondary">
                             {usuario.empleado?.area?.nombre || "—"}
                           </small>
@@ -592,7 +783,11 @@ export default function Usuarios() {
                                   ? "btn-outline-danger"
                                   : "btn-outline-success"
                               }`}
-                              title={usuario.activo ? "Desactivar" : "Activar"}
+                              title={
+                                usuario.activo
+                                  ? "Desactivar"
+                                  : "Activar"
+                              }
                               onClick={() => cambiarEstado(usuario)}
                             >
                               <i
@@ -640,6 +835,7 @@ export default function Usuarios() {
                     <h5 className="modal-title">
                       {editando ? "Editar usuario" : "Crear usuario"}
                     </h5>
+
                     <button
                       type="button"
                       className="btn-close"
@@ -650,12 +846,17 @@ export default function Usuarios() {
 
                   <div className="modal-body">
                     {error && (
-                      <div className="alert alert-danger">{error}</div>
+                      <div className="alert alert-danger">
+                        {error}
+                      </div>
                     )}
 
                     {!editando && (
                       <div className="mb-3">
-                        <label className="form-label">Empleado asociado</label>
+                        <label className="form-label">
+                          Empleado asociado
+                        </label>
+
                         <select
                           className="form-select"
                           name="empleadoId"
@@ -663,9 +864,15 @@ export default function Usuarios() {
                           onChange={cambiarCampo}
                           required
                         >
-                          <option value="">Selecciona un empleado</option>
+                          <option value="">
+                            Selecciona un empleado
+                          </option>
+
                           {empleados.map((empleado) => (
-                            <option key={empleado.id} value={empleado.id}>
+                            <option
+                              key={empleado.id}
+                              value={empleado.id}
+                            >
                               {empleado.nombres} {empleado.apellidos} —{" "}
                               {empleado.correo}
                             </option>
@@ -681,7 +888,10 @@ export default function Usuarios() {
                     )}
 
                     <div className="mb-3">
-                      <label className="form-label">Nombre de usuario</label>
+                      <label className="form-label">
+                        Nombre de usuario
+                      </label>
+
                       <input
                         className="form-control"
                         name="username"
@@ -698,6 +908,7 @@ export default function Usuarios() {
                         Contraseña
                         {editando && " (vacía para conservar la actual)"}
                       </label>
+
                       <div className="input-group">
                         <input
                           className="form-control"
@@ -710,10 +921,13 @@ export default function Usuarios() {
                           autoComplete="new-password"
                           placeholder="Mínimo 8 caracteres y 1 carácter especial"
                         />
+
                         <button
                           type="button"
                           className="btn btn-outline-secondary"
-                          onClick={() => setMostrarPassword(!mostrarPassword)}
+                          onClick={() =>
+                            setMostrarPassword(!mostrarPassword)
+                          }
                           title={
                             mostrarPassword
                               ? "Ocultar contraseña"
@@ -722,36 +936,50 @@ export default function Usuarios() {
                         >
                           <i
                             className={`bi ${
-                              mostrarPassword ? "bi-eye-slash" : "bi-eye"
+                              mostrarPassword
+                                ? "bi-eye-slash"
+                                : "bi-eye"
                             }`}
                           />
                         </button>
                       </div>
+
                       {!editando && (
                         <small className="text-secondary d-block mt-1">
-                          Debe incluir al menos un símbolo especial (ej. @, $, !, %).
+                          Debe incluir al menos un símbolo especial
+                          (ej. @, $, !, %).
                         </small>
                       )}
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Confirmar contraseña</label>
+                      <label className="form-label">
+                        Confirmar contraseña
+                      </label>
+
                       <div className="input-group">
                         <input
                           className="form-control"
-                          type={mostrarConfirmPassword ? "text" : "password"}
+                          type={
+                            mostrarConfirmPassword ? "text" : "password"
+                          }
                           name="confirmPassword"
                           value={formulario.confirmPassword}
                           onChange={cambiarCampo}
                           minLength={8}
-                          required={!editando || formulario.password !== ""}
+                          required={
+                            !editando || formulario.password !== ""
+                          }
                           placeholder="Repite la contraseña"
                         />
+
                         <button
                           type="button"
                           className="btn btn-outline-secondary"
                           onClick={() =>
-                            setMostrarConfirmPassword(!mostrarConfirmPassword)
+                            setMostrarConfirmPassword(
+                              !mostrarConfirmPassword
+                            )
                           }
                           title={
                             mostrarConfirmPassword
@@ -761,7 +989,9 @@ export default function Usuarios() {
                         >
                           <i
                             className={`bi ${
-                              mostrarConfirmPassword ? "bi-eye-slash" : "bi-eye"
+                              mostrarConfirmPassword
+                                ? "bi-eye-slash"
+                                : "bi-eye"
                             }`}
                           />
                         </button>
@@ -770,6 +1000,7 @@ export default function Usuarios() {
 
                     <div className="mb-3">
                       <label className="form-label">Rol</label>
+
                       <select
                         className="form-select"
                         name="rol"
@@ -800,7 +1031,8 @@ export default function Usuarios() {
                       type="submit"
                       className="btn btn-primary"
                       disabled={
-                        guardando || (!editando && empleados.length === 0)
+                        guardando ||
+                        (!editando && empleados.length === 0)
                       }
                     >
                       {guardando ? "Guardando..." : "Guardar"}
@@ -812,7 +1044,7 @@ export default function Usuarios() {
           </div>
         )}
 
-        {/* MODAL GESTIONAR PERMISOS DEL CHEF */}
+        {/* MODAL GESTIONAR PERMISOS DEL CHEF / NUEVO ROL */}
         {modalRolAbierto && (
           <div
             className="modal d-block"
@@ -825,32 +1057,52 @@ export default function Usuarios() {
                 <form onSubmit={guardarRol}>
                   <div className="modal-header">
                     <h5 className="modal-title">
-                      Gestionar Permisos del Chef (Rol ID: {rolChefActual.id ?? 4})
+                      {esNuevoRol
+                        ? "Crear Nuevo Rol"
+                        : `Gestionar Permisos del Chef (Rol ID: ${rolChefActual?.id})`}
                     </h5>
+
                     <button
                       type="button"
                       className="btn-close"
                       aria-label="Cerrar"
-                      onClick={() => setModalRolAbierto(false)}
+                      onClick={() => {
+                        setModalRolAbierto(false);
+                        setEsNuevoRol(false);
+                      }}
                     />
                   </div>
 
                   <div
                     className="modal-body"
-                    style={{ maxHeight: "60vh", overflowY: "auto" }}
+                    style={{
+                      maxHeight: "60vh",
+                      overflowY: "auto",
+                    }}
                   >
                     {error && (
-                      <div className="alert alert-danger">{error}</div>
+                      <div className="alert alert-danger">
+                        {error}
+                      </div>
                     )}
 
                     <div className="mb-3">
-                      <label className="form-label">Nombre del rol</label>
+                      <label className="form-label">
+                        Nombre del rol
+                      </label>
+
                       <input
                         className="form-control"
                         name="nombre"
                         value={formularioRol.nombre}
                         onChange={cambiarCampoRol}
-                        disabled
+                        disabled={!esNuevoRol}
+                        placeholder={
+                          esNuevoRol
+                            ? "Ej. Cajero, Supervisor de piso"
+                            : ""
+                        }
+                        required={esNuevoRol}
                       />
                     </div>
 
@@ -860,141 +1112,35 @@ export default function Usuarios() {
                       </label>
 
                       <div className="d-flex flex-column gap-2">
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p1"
-                            name="empleados"
-                            checked={formularioRol.empleados}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p1"
+                        {[
+                          ["empleados", "👥 Empleados"],
+                          ["calendarios", "📅 Calendarios"],
+                          ["reportes", "📄 Reportes"],
+                          ["solicitudes", "🏖️ Solicitudes"],
+                          ["reclutamiento", "👔 Reclutamiento"],
+                          ["planillas", "💰 Planillas"],
+                          ["bitacora", "🕒 Historial"],
+                          ["mantenimiento", "🛠️ Mantenimiento"],
+                        ].map(([clave, etiqueta], index) => (
+                          <div
+                            key={clave}
+                            className="form-check form-switch bg-light p-2 rounded border"
                           >
-                            👥 Empleados
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p2"
-                            name="calendarios"
-                            checked={formularioRol.calendarios}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p2"
-                          >
-                            📅 Calendarios
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p3"
-                            name="reportes"
-                            checked={formularioRol.reportes}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p3"
-                          >
-                            📄 Reportes
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p4"
-                            name="solicitudes"
-                            checked={formularioRol.solicitudes}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p4"
-                          >
-                            🏖️ Solicitudes
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p5"
-                            name="reclutamiento"
-                            checked={formularioRol.reclutamiento}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p5"
-                          >
-                            👔 Reclutamiento
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p6"
-                            name="planillas"
-                            checked={formularioRol.planillas}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p6"
-                          >
-                            💰 Planillas
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p7"
-                            name="bitacora"
-                            checked={formularioRol.bitacora}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p7"
-                          >
-                            🕒 Historial
-                          </label>
-                        </div>
-
-                        <div className="form-check form-switch bg-light p-2.5 rounded border">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="p8"
-                            name="mantenimiento"
-                            checked={formularioRol.mantenimiento}
-                            onChange={cambiarCampoRol}
-                          />
-                          <label
-                            className="form-check-label fw-medium text-dark ms-2"
-                            htmlFor="p8"
-                          >
-                            🛠️ Mantenimiento
-                          </label>
-                        </div>
+                            <input
+                              type="checkbox"
+                              id={`permiso-${clave}`}
+                              name={clave}
+                              checked={Boolean(formularioRol[clave])}
+                              onChange={cambiarCampoRol}
+                            />
+                            <label
+                              className="form-check-label fw-medium text-dark ms-2"
+                              htmlFor={`permiso-${clave}`}
+                            >
+                              {etiqueta}
+                            </label>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1003,17 +1149,25 @@ export default function Usuarios() {
                     <button
                       type="button"
                       className="btn btn-light"
-                      onClick={() => setModalRolAbierto(false)}
+                      onClick={() => {
+                        setModalRolAbierto(false);
+                        setEsNuevoRol(false);
+                      }}
                       disabled={guardandoRol}
                     >
                       Cancelar
                     </button>
+
                     <button
                       type="submit"
                       className="btn btn-primary"
                       disabled={guardandoRol}
                     >
-                      {guardandoRol ? "Guardando..." : "Guardar Cambios"}
+                      {guardandoRol
+                        ? "Guardando..."
+                        : esNuevoRol
+                        ? "Crear Rol"
+                        : "Guardar Cambios"}
                     </button>
                   </div>
                 </form>

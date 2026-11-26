@@ -31,7 +31,7 @@ export default function ModalDetalleReporte({ reporte, onClose }) {
           )}
 
           <div className="d-flex justify-content-between text-muted small mt-2">
-            <span>Supervisor: <strong>{reporte.supervisor}</strong></span>
+            <span>Quien Reporta: <strong>{reporte.supervisor}</strong></span>
             <span>{reporte.fecha}</span>
           </div>
         </div>

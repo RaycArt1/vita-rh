@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import api from "../services/api";
@@ -12,6 +13,7 @@ export default function Login() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
+
   async function manejarLogin(event) {
     event.preventDefault();
     setError("");
@@ -37,8 +39,8 @@ export default function Login() {
         throw new Error("El servidor devolvió una respuesta inesperada.");
       }
 
-      // Guardamos la sesión en ambos storages para compatibilidad total con el sistema
       const token = resultado.token;
+
       sessionStorage.setItem("gestRH_token", token);
       localStorage.setItem("gestRH_token", token);
       localStorage.setItem("token", token);
@@ -49,13 +51,17 @@ export default function Login() {
         JSON.stringify(resultado.usuario)
       );
 
-      // Guardamos también en localStorage el formato que leen otros módulos (ej. Sidebar)
-      localStorage.setItem("usuario", JSON.stringify(resultado.usuario));
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify(resultado.usuario)
+      );
 
-      const rol = String(resultado.usuario.rol || "").toUpperCase().trim();
+      const rol = String(resultado.usuario.rol || "")
+        .toUpperCase()
+        .trim();
+
       const username = resultado.usuario.username;
 
-      // Validación robusta para reconocer al chef y roles específicos
       const esChef =
         rol.includes("CHEF") ||
         username === "aalvarado" ||
@@ -93,7 +99,12 @@ export default function Login() {
           <img
             src="/vita.jpeg"
             alt="Logo Vita Pizzería"
-            style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }}
+            style={{
+              width: 40,
+              height: 40,
+              objectFit: "contain",
+              borderRadius: 8,
+            }}
           />
 
           <div>
@@ -126,16 +137,36 @@ export default function Login() {
             <img
               src="/vita.jpeg"
               alt="Logo Vita Pizzería"
-              style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8 }}
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: "contain",
+                borderRadius: 8,
+              }}
             />
           </div>
 
           <h2>Bienvenido</h2>
+
           <p className="login-subtitle">
             Inicia sesión para acceder a tu espacio de trabajo.
           </p>
 
-          {location.state?.aviso && <div style={{ background: "#e7f8ee", color: "#147e43", padding: 12, borderRadius: 9, marginBottom: 16, fontSize: 13 }}>{location.state.aviso}</div>}
+          {location.state?.aviso && (
+            <div
+              style={{
+                background: "#e7f8ee",
+                color: "#147e43",
+                padding: 12,
+                borderRadius: 9,
+                marginBottom: 16,
+                fontSize: 13,
+              }}
+            >
+              {location.state.aviso}
+            </div>
+          )}
+
           <form onSubmit={manejarLogin}>
             <div className="login-field">
               <label htmlFor="login-usuario">USUARIO O CORREO</label>
@@ -172,7 +203,9 @@ export default function Login() {
                 <button
                   className="login-show-password"
                   type="button"
-                  onClick={() => setMostrarPassword((actual) => !actual)}
+                  onClick={() =>
+                    setMostrarPassword((actual) => !actual)
+                  }
                   aria-label={
                     mostrarPassword
                       ? "Ocultar contraseña"
@@ -203,8 +236,10 @@ export default function Login() {
           <p className="login-demo-note">
             <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
           </p>
+
           <p className="login-demo-note" style={{ marginTop: 15 }}>
-            ¿Quieres trabajar en Vita Pizzería? <Link to="/registro">Crear cuenta de postulante</Link>
+            ¿Quieres trabajar en Vita Pizzería?{" "}
+            <Link to="/registro">Crear cuenta de postulante</Link>
           </p>
         </div>
       </section>

@@ -112,7 +112,7 @@ export default function ReportesPage() {
                 <input
                   type="text"
                   className="form-control border-start-0 ps-0"
-                  placeholder="Buscar por empleado, supervisor o descripción..."
+                  placeholder="Buscar por empleado, quien reporta o descripción..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                 />
@@ -151,7 +151,7 @@ export default function ReportesPage() {
                   <th>Tipo</th>
                   <th>Gravedad</th>
                   <th>Descripción</th>
-                  <th>Supervisor</th>
+                  <th>Quien reporta</th>
                   <th>Fecha</th>
                   <th className="text-end">Acciones</th>
                 </tr>
