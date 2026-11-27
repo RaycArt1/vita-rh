@@ -2,7 +2,12 @@ import prisma from '../../config/prisma.js';
 
 export const obtenerReportes = async () => {
   return await prisma.reporteIncidencia.findMany({
-    orderBy: { id: 'desc' }
+    orderBy: { id: 'desc' },
+    include: {
+      llamado: {
+        select: { decision: true, observacionEmpleado: true, fechaFirma: true },
+      },
+    },
   });
 };
 
@@ -37,6 +42,7 @@ export const crearReporte = async (datos) => {
         numeroLlamado: llamadosPrevios + 1,
         empleadoId,
         emisorId: datos.emisorId,
+        reporteId: reporte.id,
       },
     });
 
@@ -47,7 +53,6 @@ export const crearReporte = async (datos) => {
 // NUEVA FUNCIÓN PARA ELIMINAR EN EL SERVICIO
 export const eliminarReporte = async (id) => {
   return await prisma.reporteIncidencia.delete({
-    where: { id: Number(id) } // Asegura que el ID se pase como número para Prisma
+    where: { id: Number(id) },
   });
 };
-

@@ -332,11 +332,15 @@ model LlamadoAtencion {
   numeroLlamado    Int
   firmadoEmpleado  Boolean   @default(false)
   fechaFirma       DateTime?
+  decision            String?
+  observacionEmpleado String?
   empleadoId       Int
   emisorId         Int
+   reporteId           Int?      @unique
 
   empleado Empleado @relation(fields: [empleadoId], references: [id])
   emisor   Usuario  @relation(fields: [emisorId], references: [id])
+  reporte             ReporteIncidencia? @relation(fields: [reporteId], references: [id])
 }
 
 // ===================== NÓMINA / PLANILLAS =====================
@@ -402,6 +406,7 @@ model ReporteIncidencia {
   seguimiento  String?
   documentoUrl String?
   createdAt    DateTime @default(now())
+  llamado      LlamadoAtencion?
 
   empleadoId   Int?
   empleado_rel Empleado? @relation(fields: [empleadoId], references: [id])

@@ -55,13 +55,34 @@ export async function perfilEmpleado(empleadoId) {
   });
 }
 
-export async function firmarLlamado(llamadoId, empleadoId) {
+export async function responderLlamado(llamadoId, empleadoId, decision, observacion) {
   const llamado = await prisma.llamadoAtencion.findUnique({ where: { id: llamadoId } });
   if (!llamado || llamado.empleadoId !== empleadoId) return { error: "NO_ENCONTRADO" };
-  if (llamado.firmadoEmpleado) return { error: "YA_FIRMADO" };
+  if (llamado.decision) return { error: "YA_RESPONDIDO" };
 
   return prisma.llamadoAtencion.update({
     where: { id: llamadoId },
-    data: { firmadoEmpleado: true, fechaFirma: new Date() },
+    data: {
+      decision,
+      firmadoEmpleado: decision === "ACEPTADO",
+      observacionEmpleado: decision === "RECHAZADO" ? observacion : null,
+      fechaFirma: new Date(),
+    },
   });
+}
+
+import bcrypt from "bcrypt";
+
+export async function cambiarPasswordPropia(usuarioId, actual, nueva) {
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+  if (!usuario) return { error: "NO_ENCONTRADO" };
+
+  const coincide = await bcrypt.compare(actual, usuario.password);
+  if (!coincide) return { error: "ACTUAL_INCORRECTA" };
+
+  await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { password: await bcrypt.hash(nueva, 10) },
+  });
+  return { ok: true };
 }
