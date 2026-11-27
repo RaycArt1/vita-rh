@@ -1,6 +1,9 @@
 import React from 'react';
 
 export default function ModalDetalleReporte({ reporte, onClose }) {
+  const llamado = reporte.llamado;
+  const decision = llamado?.decision;
+
   return (
     <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-dialog-centered">
@@ -30,8 +33,22 @@ export default function ModalDetalleReporte({ reporte, onClose }) {
             </div>
           )}
 
+          <div className="p-3 border rounded mb-3">
+            <small className="text-muted d-block mb-1">Respuesta del empleado</small>
+            {decision === 'ACEPTADO' && (
+              <span className="badge bg-success">Aceptado {llamado.fechaFirma?.slice(0, 10)}</span>
+            )}
+            {decision === 'RECHAZADO' && (
+              <>
+                <span className="badge bg-danger mb-2">Rechazado {llamado.fechaFirma?.slice(0, 10)}</span>
+                <p className="m-0 text-secondary"><strong>Motivo:</strong> {llamado.observacionEmpleado}</p>
+              </>
+            )}
+            {!decision && <span className="badge bg-light text-dark border">Sin respuesta</span>}
+          </div>
+
           <div className="d-flex justify-content-between text-muted small mt-2">
-            <span>Supervisor: <strong>{reporte.supervisor}</strong></span>
+            <span>Quien Reporta: <strong>{reporte.supervisor}</strong></span>
             <span>{reporte.fecha}</span>
           </div>
         </div>

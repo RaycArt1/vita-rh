@@ -44,23 +44,32 @@ export async function perfilDelEmpleado(req, res) {
   }
 }
 
-export async function firmarLlamadoEmpleado(req, res) {
+export async function responderLlamadoEmpleado(req, res) {
   try {
     const empleadoId = req.usuario?.empleadoId;
     const llamadoId = Number(req.params.id);
+    const { decision, observacion } = req.body;
+
     if (!empleadoId) {
       return res.status(403).json({ mensaje: "Tu usuario no está asociado a un empleado" });
     }
     if (!Number.isInteger(llamadoId) || llamadoId <= 0) {
       return res.status(400).json({ mensaje: "Id de llamado no válido" });
     }
+    if (!["ACEPTADO", "RECHAZADO"].includes(decision)) {
+      return res.status(400).json({ mensaje: "La decisión debe ser ACEPTADO o RECHAZADO" });
+    }
+    const motivo = String(observacion ?? "").trim();
+    if (decision === "RECHAZADO" && !motivo) {
+      return res.status(400).json({ mensaje: "Debes escribir el motivo del rechazo" });
+    }
 
-    const resultado = await resumenService.firmarLlamado(llamadoId, empleadoId);
+    const resultado = await resumenService.responderLlamado(llamadoId, empleadoId, decision, motivo);
     if (resultado?.error === "NO_ENCONTRADO") {
       return res.status(404).json({ mensaje: "Llamado no encontrado" });
     }
-    if (resultado?.error === "YA_FIRMADO") {
-      return res.status(409).json({ mensaje: "Este llamado ya fue firmado" });
+    if (resultado?.error === "YA_RESPONDIDO") {
+      return res.status(409).json({ mensaje: "Este llamado ya fue respondido" });
     }
 
     await registrarBitacora({
@@ -68,7 +77,9 @@ export async function firmarLlamadoEmpleado(req, res) {
       accion: "UPDATE",
       tablaAfectada: "LlamadoAtencion",
       idRegistro: llamadoId,
-      descripcion: "Llamado firmado por el empleado",
+      descripcion: decision === "ACEPTADO"
+        ? "Llamado aceptado por el empleado"
+        : `Llamado rechazado por el empleado: ${motivo}`,
       ipOrigen: req.ip,
     });
 

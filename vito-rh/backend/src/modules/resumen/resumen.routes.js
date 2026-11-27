@@ -8,7 +8,7 @@ const router = Router();
 router.get("/empleado", verificarToken, resumenController.resumenDelEmpleado);
 router.get("/llamados", verificarToken, resumenController.llamadosDelEmpleado);
 router.get("/perfil", verificarToken, resumenController.perfilDelEmpleado);
-router.patch("/llamados/:id/firmar", verificarToken, resumenController.firmarLlamadoEmpleado);
+router.patch("/llamados/:id/responder", verificarToken, resumenController.responderLlamadoEmpleado);
 router.put("/password", verificarToken, cambiarPassword);
 
 export default router;
